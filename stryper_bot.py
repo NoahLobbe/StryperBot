@@ -2,12 +2,24 @@ import os
 import discord
 import discord.ext.commands
 import validators
+import pytube
 import json
 
 
 ###
 def validateYoutubeURL(url):
-    return bool(validators.url(url))
+    valid_url = bool(validators.url(url))
+    if valid_url:
+        YT_Obj = pytube.YouTube(valid_url)
+        if YT_Obj.author == "The Official Stryper Channel":
+            #eventually add a function for certain people to override
+            #if it is actually a stryper song
+            return True 
+        else:
+            return False
+                
+    else:
+        return False
 
 def validateRating(rating_str):
     if rating_str.isdigit():
