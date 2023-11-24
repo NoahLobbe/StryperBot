@@ -1,2 +1,5 @@
 #Don't include virtual environment
 .venv/
+
+#Don't include secrets
+.env

@@ -1,20 +1,19 @@
-
-"""
-virtual environment name is "env"
-"""
-
+#standard python libraries
 import os
+import json
+
+#denpendencies
 import discord
 import discord.ext.commands
 import validators
-#import pytube
-import json
+from dotenv import load_dotenv
 
 
 ###
 def validateYoutubeURL(url):
     is_valid_url = bool(validators.url(url))
     if is_valid_url:
+        return True
         '''
         YT_Obj = pytube.YouTube(url)
         print(YT_Obj,YT_Obj.channel_id,YT_Obj.channel_url)
@@ -40,9 +39,11 @@ def validateRating(rating_str):
 
 
 ###Bot stuff
-
-BOT_TOKEN = os.getenv('STRYPER_BOT_TOKEN') 
-assert BOT_TOKEN is not None
+def load_token():
+    load_dotenv()
+    BOT_TOKEN = os.getenv('STRYPER_BOT_TOKEN')
+    assert BOT_TOKEN is not None
+    return BOT_TOKEN
 
 botIntents = discord.Intents.default()
 botIntents.message_content = True #enables sending messages?
@@ -78,7 +79,7 @@ async def add(ctx, *arguements):
     rating_is_legit = validateRating(rating)
 
     url_invalid_str = f"'{youtube_url}' is not reachable"
-    rating_invalid_str = f"'{rating}' is invalid, has to be an integer from 0 to 10"
+    rating_invalid_str = f"'{rating}' is invalid, has to be a positive integer from 0 to 10"
     
 
     #output stufff
@@ -100,4 +101,4 @@ async def add(ctx, *arguements):
 
     
 if __name__ == "__main__":
-    Bot.run(BOT_TOKEN)
+    Bot.run(load_token())
