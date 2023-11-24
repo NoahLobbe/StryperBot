@@ -56,10 +56,13 @@ def cleanYoutubeURL(url):
     return url[:cut_off_index]
 
 def validateRating(rating_str):
-    if rating_str.isdigit():
-        rating = int(rating_str)
+    try:
+        rating = float(rating_str)
+        if (rating).is_integer():
+            rating = int(rating) #makes the text output later nicer :D
         return (rating >= 0 and rating <= 10)
-    else:
+    except ValueError as e:
+        print(e)
         return False
 
 
