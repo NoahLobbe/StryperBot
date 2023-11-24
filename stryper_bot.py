@@ -142,19 +142,16 @@ async def on_ready():
     print(f"{Bot.user} has connected to Discord!")
 
 @Bot.command()
-async def greet(ctx):
-    await Bot.change_presence(status=discord.Status.online)
-    
+async def greet(ctx):    
     print("sending greeting...")
-    await ctx.send("Hello there!")
+    await ctx.send("Why hello there!")
 
-    await Bot.change_presence(status=discord.Status.offline)
 
 
 @Bot.command()
 async def random(ctx):
     song = _getRandomSong()
-    postSong(ctx, song)
+    await postSong(ctx, song)
 
 
 @Bot.command()
