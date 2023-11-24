@@ -82,7 +82,7 @@ def songMessage(song_dict):
 
 def doesSongExist(songs_json, song_dict):
     for song in songs_json["songs"]:
-        if song_dict == song:
+        if ((song_dict["url"] == song["url"]) or (song_dict["title"] == song["title"])):
             print("already exists!")
             return True
     return False
@@ -111,8 +111,6 @@ def _getRandomSong():
     song = rand.choice(songs_json["songs"])
     print(f"Random song: {song}")
     return song
-
-
 
 
 
@@ -200,6 +198,10 @@ async def add(ctx, *arguements):
         await ctx.send(error_msg)
         print(error_msg)
 
+
+@Bot.command()
+async def update(ctx):
+    await ctx.send("command currently not supported...")
 
     
 if __name__ == "__main__":
