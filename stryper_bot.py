@@ -1,22 +1,30 @@
+
+"""
+virtual environment name is "env"
+"""
+
 import os
 import discord
 import discord.ext.commands
 import validators
-import pytube
+#import pytube
 import json
 
 
 ###
 def validateYoutubeURL(url):
-    valid_url = bool(validators.url(url))
-    if valid_url:
-        YT_Obj = pytube.YouTube(valid_url)
+    is_valid_url = bool(validators.url(url))
+    if is_valid_url:
+        '''
+        YT_Obj = pytube.YouTube(url)
+        print(YT_Obj,YT_Obj.channel_id,YT_Obj.channel_url)
         if YT_Obj.author == "The Official Stryper Channel":
             #eventually add a function for certain people to override
             #if it is actually a stryper song
             return True 
         else:
             return False
+        '''
                 
     else:
         return False
