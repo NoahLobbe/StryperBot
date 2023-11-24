@@ -1,6 +1,7 @@
 #standard python libraries
 import os
 import json
+import random as rand
 
 #denpendencies
 import discord
@@ -8,8 +9,24 @@ import discord.ext.commands
 import validators
 from dotenv import load_dotenv
 
+###Constants
+JSON_INDENTS = 4
+SONGS_FILE = "songs.json"
 
-###
+
+### Setup functions
+def checkSongsFile():
+    """Returns True if already existed, and False if file had to be made"""
+    if not os.path.exists(SONGS_FILE):
+        print(f"Making '{SONGS_FILE}'")
+        with open(SONGS_FILE, "w+") as new_file:
+            data = {"songs": []}
+            json.dump(data, new_file, indent=JSON_INDENTS)
+        return False
+    return True
+
+
+### Functions for Bot
 def validateYoutubeURL(url):
     is_valid_url = bool(validators.url(url))
     if is_valid_url:
@@ -36,6 +53,38 @@ def validateRating(rating_str):
         return False
 
 
+##songs JSON stuff
+def songMessage(song_dict):
+    intro = "***Hello everybody and WELCOME to Stryper Saturday!!!***" 
+    description = f"\nToday is the amazing song *{song_dict['title']}*, with a rating of {song_dict['rating']}/10: "
+    link = song_dict["url"]
+    notes = song_dict["notes"]
+    return intro + description + link, notes
+
+
+def loadSongs():
+    with open(SONGS_FILE, "r") as read_file:
+        return json.load(read_file)
+    
+    
+def addSong(title, url, rating, notes):
+    new_data = {"title":title, "url":url, "rating":rating, "notes":notes}
+    current_data_json = loadSongs()
+
+    with open(SONGS_FILE, "w") as write_file:
+        current_data_json["songs"].append(new_data) #updated
+
+        json.dump(current_data_json, write_file, indent=JSON_INDENTS)
+
+
+def _getRandomSong():
+    songs_json = loadSongs()
+    song = rand.choice(songs_json["songs"])
+    print(f"Random song: {song}")
+    return song
+
+
+
 
 
 ###Bot stuff
@@ -49,6 +98,8 @@ botIntents = discord.Intents.default()
 botIntents.message_content = True #enables sending messages?
 
 Bot = discord.ext.commands.Bot(command_prefix=".", intents=botIntents)
+
+
 
 
 ##Bot functions
@@ -65,6 +116,13 @@ async def greet(ctx):
     await ctx.send("Hello there!")
 
     await Bot.change_presence(status=discord.Status.offline)
+
+@Bot.command()
+async def random(ctx):
+    song = _getRandomSong()
+    msg, note = songMessage(song)
+    await ctx.send(msg)
+    await ctx.send(note)
 
 @Bot.command()
 async def add(ctx, *arguements):
@@ -101,4 +159,12 @@ async def add(ctx, *arguements):
 
     
 if __name__ == "__main__":
+    already_existed = checkSongsFile()
+    if not already_existed:
+        default_song = ("To Hell with the Devil", 
+                        "https://www.youtube.com/watch?v=sG0zAn0dL2I", 
+                        10, 
+                        "Containing 4 minutes of legenedary epicness, it will get you **pumped**!")
+        addSong(*default_song)
+    print("loading", loadSongs())
     Bot.run(load_token())
