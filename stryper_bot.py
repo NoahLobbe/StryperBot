@@ -17,7 +17,7 @@ SONGS_FILE = "songs.json"
 
 
 ### Setup functions
-def checkSongsFile():
+def SongsFileExists():
     """Returns True if already existed, and False if file had to be made"""
     if not os.path.exists(SONGS_FILE):
         print(f"Making '{SONGS_FILE}'")
@@ -161,11 +161,10 @@ async def random(ctx):
 
 @Bot.command()
 async def add(ctx, *arguements):
-    #parse user input
     print(f"User inputted: {arguements}")
+
     youtube_url = arguements[0]
     rating = arguements[1]
-    
 
     #validate user input
     url_is_legit, yt_title = validateYoutubeURL(youtube_url)
@@ -174,20 +173,15 @@ async def add(ctx, *arguements):
     url_invalid_str = f"'{youtube_url}' is not reachable"
     rating_invalid_str = f"'{rating}' is invalid, has to be a positive integer from 0 to 10"
     
-
     #output stufff
     if url_is_legit and rating_is_legit:
         msg = "URL and rating are valid..."
-        
     elif url_is_legit and not rating_is_legit:
         msg = rating_invalid_str
-
     elif not url_is_legit and rating_is_legit:
         msg = url_invalid_str
-
     else:
-        msg = url_invalid_str + ", and " + rating_invalid_str
-        
+        msg = url_invalid_str + ", and " + rating_invalid_str 
     print(msg)
     await ctx.send(msg)
 
@@ -202,12 +196,14 @@ async def add(ctx, *arguements):
         await postSong(ctx, getSong(-1))
         print("...successful")
     else:
-        await ctx.send("Already added!")
-        print("Already added!")
+        error_msg = "Already added! Update entry using .update command"
+        await ctx.send(error_msg)
+        print(error_msg)
+
 
     
 if __name__ == "__main__":
-    already_existed = checkSongsFile()
+    already_existed = SongsFileExists()
     if not already_existed:
         default_song = ("To Hell with the Devil", 
                         "https://www.youtube.com/watch?v=sG0zAn0dL2I", 
