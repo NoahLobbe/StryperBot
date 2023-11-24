@@ -4,4 +4,4 @@ A Discord bot made to automate Stryper Saturdays. Stryper Saturdays are when a S
 "But what if I still want to do it myself?" you say. The answer is that StryperBot is intended to determine whether someone has already enacted Stryper Saturday, and if so, step down and leave it. However, if no-one has enacted Stryper Saturday then StryperBot will do so. The exact time the Discord members have till StryperBot posts is undetermined as of yet.
 
 ## Dependencies
-List of them in [`requirements.txt`](/src/branch/master/requirements.txt)
+List of them in [`requirements.txt`](requirements.txt)
