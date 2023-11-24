@@ -8,6 +8,8 @@ import discord
 import discord.ext.commands
 import validators
 from dotenv import load_dotenv
+import requests
+from bs4 import BeautifulSoup
 
 ###Constants
 JSON_INDENTS = 4
@@ -26,24 +28,32 @@ def checkSongsFile():
     return True
 
 
-### Functions for Bot
+### Functions for bot
+##validate if a user provide url is a stryper youtube video
+def isYoutube(url):
+    is_youtube = False
+    R = requests.get(url)
+    html = BeautifulSoup(R.content, features="html.parser")
+
+    for tag in html.find_all("link", attrs={'itemprop':'url'}): #simplest and first spot to find ...
+        #print(tag)
+        if "href" in tag.attrs.keys(): #HTML tag 'link' would have to have a href right?
+            if (tag.attrs['href'] == "http://www.youtube.com/channel/UC20qdRIIoh4Xr6jnmZ4HBng"): #...stryper's official channel URL
+                is_youtube = True
+    #get title
+    title = html.find("meta", attrs={"name":"title"}).attrs["content"]
+    return is_youtube, title
+
 def validateYoutubeURL(url):
     is_valid_url = bool(validators.url(url))
     if is_valid_url:
-        return True
-        '''
-        YT_Obj = pytube.YouTube(url)
-        print(YT_Obj,YT_Obj.channel_id,YT_Obj.channel_url)
-        if YT_Obj.author == "The Official Stryper Channel":
-            #eventually add a function for certain people to override
-            #if it is actually a stryper song
-            return True 
-        else:
-            return False
-        '''
-                
+        return isYoutube(url)       
     else:
-        return False
+        return False, ""
+    
+def cleanYoutubeURL(url):
+    cut_off_index = url.find("&") #first one found is returned, which is the start of extra needless data in url
+    return url[:cut_off_index]
 
 def validateRating(rating_str):
     if rating_str.isdigit():
@@ -53,7 +63,12 @@ def validateRating(rating_str):
         return False
 
 
-##songs JSON stuff
+##songs file stuff
+def loadSongs():
+    with open(SONGS_FILE, "r") as read_file:
+        return json.load(read_file)
+    
+
 def songMessage(song_dict):
     intro = "***Hello everybody and WELCOME to Stryper Saturday!!!***" 
     description = f"\nToday is the amazing song *{song_dict['title']}*, with a rating of {song_dict['rating']}/10: "
@@ -62,20 +77,31 @@ def songMessage(song_dict):
     return intro + description + link, notes
 
 
-def loadSongs():
-    with open(SONGS_FILE, "r") as read_file:
-        return json.load(read_file)
+def doesSongExist(songs_json, song_dict):
+    for song in songs_json["songs"]:
+        if song_dict == song:
+            print("already exists!")
+            return True
+    return False
+
+
     
     
 def addSong(title, url, rating, notes):
-    new_data = {"title":title, "url":url, "rating":rating, "notes":notes}
-    current_data_json = loadSongs()
+    new_song = {"title":title, "url":url, "rating":rating, "notes":notes}
+    current_songs_json = loadSongs()
 
-    with open(SONGS_FILE, "w") as write_file:
-        current_data_json["songs"].append(new_data) #updated
+    if not doesSongExist(current_songs_json, new_song):
+        with open(SONGS_FILE, "w") as write_file:
+            current_songs_json["songs"].append(new_song) #updated
 
-        json.dump(current_data_json, write_file, indent=JSON_INDENTS)
+            json.dump(current_songs_json, write_file, indent=JSON_INDENTS)
+        return True
+    return False
 
+def getSong(index):
+    songs_json = loadSongs()
+    return songs_json["songs"][index]
 
 def _getRandomSong():
     songs_json = loadSongs()
@@ -104,6 +130,12 @@ Bot = discord.ext.commands.Bot(command_prefix=".", intents=botIntents)
 
 ##Bot functions
 
+async def postSong(ctx, song):
+    msg, note = songMessage(song)
+    await ctx.send(msg)
+    if note != "": await ctx.send(note)
+
+
 @Bot.event
 async def on_ready():
     print(f"{Bot.user} has connected to Discord!")
@@ -117,12 +149,12 @@ async def greet(ctx):
 
     await Bot.change_presence(status=discord.Status.offline)
 
+
 @Bot.command()
 async def random(ctx):
     song = _getRandomSong()
-    msg, note = songMessage(song)
-    await ctx.send(msg)
-    await ctx.send(note)
+    postSong(ctx, song)
+
 
 @Bot.command()
 async def add(ctx, *arguements):
@@ -133,7 +165,7 @@ async def add(ctx, *arguements):
     
 
     #validate user input
-    url_is_legit = validateYoutubeURL(youtube_url)
+    url_is_legit, yt_title = validateYoutubeURL(youtube_url)
     rating_is_legit = validateRating(rating)
 
     url_invalid_str = f"'{youtube_url}' is not reachable"
@@ -142,7 +174,7 @@ async def add(ctx, *arguements):
 
     #output stufff
     if url_is_legit and rating_is_legit:
-        msg = f"Adding '{youtube_url}' with rating {rating}/10"
+        msg = "URL and rating are valid..."
         
     elif url_is_legit and not rating_is_legit:
         msg = rating_invalid_str
@@ -155,7 +187,20 @@ async def add(ctx, *arguements):
         
     print(msg)
     await ctx.send(msg)
+
+    #prep and add song to songs file
+    clean_yt_url = cleanYoutubeURL(youtube_url)
+    notes = ""
+    if len(arguements) > 2:
+        notes = arguements[2]
         
+    is_success = addSong(yt_title, clean_yt_url, rating, notes)
+    if is_success:
+        await postSong(ctx, getSong(-1))
+        print("...successful")
+    else:
+        await ctx.send("Already added!")
+        print("Already added!")
 
     
 if __name__ == "__main__":
