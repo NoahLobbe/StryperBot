@@ -195,7 +195,7 @@ async def add(ctx, *arguements):
     clean_yt_url = cleanYoutubeURL(youtube_url)
     notes = ""
     if len(arguements) > 2:
-        notes = arguements[2]
+        notes = " ".join(arguements[2:])
         
     is_success = addSong(yt_title, clean_yt_url, rating, notes)
     if is_success:
