@@ -22,8 +22,9 @@ JSON_INDENTS = 4
 DATA_FILE = "data.json"
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=15, minute=30, tzinfo=TIMEZONE) 
-TRIGGER_DAY_NUM = 2 # Mon==0,...Sun==6 according to datetime documentation (29th Nov 2023)
+TRIGGER_TIME = datetime.time(hour=22, minute=14, tzinfo=TIMEZONE) 
+TRIGGER_DAY = (5, "Saturday", "Sat") # Mon==0,...Sun==6 according to datetime.weekday() documentation. Tad messy for stringifying due to the conflict of strftime() and weekday()
+TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY[1]} @ {TRIGGER_TIME.strftime('%H:%M')}"
 
 #bot setup
 botIntents = discord.Intents.default()
@@ -35,29 +36,32 @@ PRIVILEGED_MEMBERS = set() #wanted something immutable
 
 load_dotenv()
 
-def get_token():
+def getToken():
     BOT_TOKEN = os.getenv('STRYPER_BOT_TOKEN')
     assert BOT_TOKEN is not None
     return BOT_TOKEN
 
-def load_privileged_members():
+def loadPrivilegedMembers():
     privileged_member_names_str = os.getenv('PRIVILEGED_MEMBER_NAMES')
     assert privileged_member_names_str is not None
 
     privileged_member_names = privileged_member_names_str.split(',')
     
-    for id in privileged_member_names:
-        PRIVILEGED_MEMBERS.add(int(id))
+    for name in privileged_member_names:
+        PRIVILEGED_MEMBERS.add(name)
 
-    print(f"PRIVILEGED_MEMBERS: {PRIVILEGED_MEMBERS}")
+    #print(f"PRIVILEGED_MEMBERS: {PRIVILEGED_MEMBERS}")
 
-async def get_channel(DEBUG=True):
+async def getChannel(DEBUG=True):
     if DEBUG:
-        channel_id = os.getenv('DEBUG_CHANNEL_ID')
+        channel_id_str = os.getenv('DEBUG_CHANNEL_ID')
     else:
-        channel_id = os.getenv('DEPLOYED_CHANNEL_ID')
+        channel_id_str = os.getenv('DEPLOYED_CHANNEL_ID')
+    channel_id = int(channel_id_str)
 
-    return Bot.get_channel(channel_id)
+    channel = Bot.get_channel(channel_id)
+    #print(f"getChannel(): {channel_id}, {channel}")
+    return channel
 
     
 
@@ -73,6 +77,7 @@ def DataFileExists():
             json.dump(data, new_file, indent=JSON_INDENTS)
         return False
     return True
+
 
 
 ### Functions for bot
@@ -188,31 +193,31 @@ async def chirp(msg=""):
 ## Bot functions for determining when to trigger (enact Stryper Saturday) :D
 @discord.ext.tasks.loop(time=TRIGGER_TIME)
 async def trigger():
-    current_time = datetime.datetime.now()
-    day = current_time.weekday()
-    if day == TRIGGER_DAY_NUM:
-        print(f"Correct day! ('{day}') Triggering...")
-
+    day = datetime.datetime.now().weekday()
+    if day == TRIGGER_DAY[0]:
+        msg = "Triggering..."
     else:
-        print(f"Wrong day to trigger ('{day}') :(")
+        msg = f"Wrong day to trigger, as day={day} (Mon=0, ...Sun=6) \n:("
+
+    await CHANNEL.send(msg)
+    print(msg)
 
 
 
-### 'slash' commands (prefix may have been redefined in Bot constructor)
+### 'slash' commands (prefix defined in Bot constructor)
 @Bot.command()
 async def alive(context):
-    await context.send("I am alive!")
+    msg = f"I, {Bot.user.name}, am alive!"
+    await context.send(msg)
+    print(msg)
     print(context.message)
 
 @Bot.command()
 async def greet(context):   
-    is_channel_allowed = await isMemberPrivileged(context) 
-    if is_channel_allowed:
-        await context.send("Why hello there!") #the equivalent to CHANNEL.send(msg)
+    is_member_allowed = await isMemberPrivileged(context) 
+    if is_member_allowed:
+        await context.send("Why hello there!")
 
-
-async def getCHANNEL():
-    pass
 
 @Bot.command()
 async def random(context):
@@ -271,17 +276,15 @@ async def update(context):
 async def on_ready():
     global CHANNEL
 
-    load_privileged_members()
-    
-    CHANNEL = get_channel(DEBUG)
-    
+    loadPrivilegedMembers()
+    CHANNEL = await getChannel(DEBUG)
 
     #prints
-    print(f"{Bot.user} has connected to Discord! \n\tUsing channel: {CHANNEL}")
+    print(f"{Bot.user} has connected to Discord, into '{CHANNEL}' channel!")
+    await CHANNEL.send(TRIGGER_SETUP_MSG)
+    print(TRIGGER_SETUP_MSG)
 
     #loop functions
-    #await chirp.start(" hi!") #just a test function
-    await CHANNEL.send(f"Trigger time set for: u")
     await trigger.start()
 
     
@@ -295,11 +298,11 @@ if __name__ == "__main__":
                         10, 
                         "Containing 4 minutes of legenedary epicness, it will get you **pumped**!")
         addSong(*default_song)
-    print("loading", loadSongs())
 
-    print("-"*30)
+    #print("loading", loadSongs())
 
     try:
-        Bot.run(get_token())
+        Bot.run(getToken())
+
     except aiohttp.client_exceptions.ClientConnectorError as e:
-        print(f"connection error running bot: \n\t{e}")
+        print(f"...oops I caught a connection error running the bot: \n\t{e}")
