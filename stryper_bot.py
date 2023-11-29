@@ -163,17 +163,26 @@ def validateRating(rating_str):
         print(e)
         return False
 
+
+
 ### Data file functions
-def loadDataFile():
+def getDataFile():
     """Returns JSON object of whole file"""
     with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)
 
 
 
+### Templates functions
+def getTemplates():
+    with open(DATA_FILE, "r") as read_file:
+        return json.load(read_file)["templates"]
+
+
+
 ### songs function
-def loadSongs():
-    """Returns ...""" #########################################list of songs?????
+def getSongs():
+    """Returns list of songs"""
     with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)["songs"]
     
@@ -201,7 +210,7 @@ def addSong(title, url, rating, notes):
     """Returns False if song already exists, and True if successful in adding song"""
     new_song = {"title":title, "url":url, "rating":rating, "notes":notes}
 
-    current_data_file = loadDataFile()
+    current_data_file = getDataFile()
     current_songs_list = current_data_file["songs"]
 
     if not doesSongExist(current_songs_list, new_song):
@@ -215,13 +224,13 @@ def addSong(title, url, rating, notes):
 
 def getSong(index):
     """Returns a song <dict> of the given index in database"""
-    songs_list = loadSongs()
+    songs_list = getSongs()
     return songs_list[index]
 
 
 def _getRandomSong():
     "Returns a song <dict>"
-    songs_list = loadSongs()
+    songs_list = getSongs()
     song_dict = rand.choice(songs_list)
     print(f"Random song: {song_dict}")
     return song_dict
@@ -236,7 +245,7 @@ async def isMemberPrivileged(context):
 
 
 async def postSong(context, song:dict):
-    """Uses the 'song' <dict> to make pretty text to post to 'context'"""
+    """Uses the 'song' <dict> to make prettier text to post to 'context'"""
     msg, note = songMessage(song)
     await context.send(msg)
     if note != "": await CHANNEL.send(note)
