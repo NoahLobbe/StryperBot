@@ -12,7 +12,7 @@ Listed in [`requirements.txt`](requirements.txt)
 These files are probably not very easy to read, but were helpful in testing stuff quickly without the whole circus.
 
 ## Data Strucutre
-`data.json` is the database file. The highest level entries are currently `songs` and `templates`.
+`data.json` is the database file. The highest level entries (or keys) are currently `songs` and `templates`.
 - `songs`: contains a `list` of each song 'object':
     - A song 'object' is a `dict` consisting of the keys `title`, `url`, `rating`, and `notes`. When adding a song to the database, `notes` is an optional part. `rating` is `int` while the rest are `str`.
 - `templates`: contains a `list` of each template
@@ -22,7 +22,7 @@ These files are probably not very easy to read, but were helpful in testing stuf
 ## Deployment
 # Adding Bot to server
 It is recommended that a 'superuser'/'debug' server/guild or text channel is allocated to the Bot. This is so that the main server channel doesn't get cluttered with commands to the Bot.
-As for the instructions for adding the Bot to a server...I will get around to it :D
+***As for the instructions for adding the Bot to a server...I will get around to it :D***
 
 
 # Secrects - Bot tokens, etc.

@@ -163,13 +163,19 @@ def validateRating(rating_str):
         print(e)
         return False
 
+### Data file functions
+def loadDataFile():
+    """Returns JSON object of whole file"""
+    with open(DATA_FILE, "r") as read_file:
+        return json.load(read_file)
+
 
 
 ### songs function
 def loadSongs():
-    """Returns a JSON object..."""
+    """Returns ...""" #########################################list of songs?????
     with open(DATA_FILE, "r") as read_file:
-        return json.load(read_file)
+        return json.load(read_file)["songs"]
     
 
 def songMessage(song:dict):
@@ -182,9 +188,9 @@ def songMessage(song:dict):
     return (intro + description + link), notes
 
 
-def doesSongExist(songs_json, song:dict):
+def doesSongExist(songs_list:list, song:dict):
     """Returns bool"""
-    for s in songs_json["songs"]:
+    for s in songs_list:
         if ((song["url"] == s["url"]) or (song["title"] == s["title"])):
             print("already exists!")
             return True
@@ -194,27 +200,29 @@ def doesSongExist(songs_json, song:dict):
 def addSong(title, url, rating, notes):
     """Returns False if song already exists, and True if successful in adding song"""
     new_song = {"title":title, "url":url, "rating":rating, "notes":notes}
-    current_songs_json = loadSongs()
 
-    if not doesSongExist(current_songs_json, new_song):
+    current_data_file = loadDataFile()
+    current_songs_list = current_data_file["songs"]
+
+    if not doesSongExist(current_songs_list, new_song):
         with open(DATA_FILE, "w") as write_file:
-            current_songs_json["songs"].append(new_song) #updated
+            current_songs_list.append(new_song) #should also update current_data_file, right?
 
-            json.dump(current_songs_json, write_file, indent=JSON_INDENTS)
+            json.dump(current_data_file, write_file, indent=JSON_INDENTS)
         return True
     return False
 
 
 def getSong(index):
     """Returns a song <dict> of the given index in database"""
-    songs_json = loadSongs()
-    return songs_json["songs"][index]
+    songs_list = loadSongs()
+    return songs_list[index]
 
 
 def _getRandomSong():
     "Returns a song <dict>"
-    songs_json = loadSongs()
-    song_dict = rand.choice(songs_json["songs"])
+    songs_list = loadSongs()
+    song_dict = rand.choice(songs_list)
     print(f"Random song: {song_dict}")
     return song_dict
 
@@ -288,8 +296,8 @@ async def add(context, youtube_url, rating, *raw_notes):
     """Adds song to database. 'rating' needs to be a positive integer from 0 to 10,
     and 'raw_notes' is just in case some adds song notes without quotes, as discord.py
     seems to split arguements by spaces."""
-    print(f"User inputted: '{youtube_url}', '{rating}', and '{raw_notes}'")
 
+    print(f"User inputted: '{youtube_url}', '{rating}', and '{raw_notes}'")
 
     #validate user input
     url_is_legit, yt_title = validateYoutubeURL(youtube_url)
@@ -326,11 +334,6 @@ async def add(context, youtube_url, rating, *raw_notes):
         print(error_msg)
 
 
-@Bot.command()
-async def update(context):
-    await context.send("command currently not supported...")
-
-
 @Bot.event
 async def on_ready():
     """Runs when Bot is ready, kind of like a class constructor/init/"""
@@ -352,7 +355,6 @@ async def on_ready():
     
 if __name__ == "__main__":
     load_dotenv()  #enable os.getenv() to actually get 'environment variables' from .env file
-
 
     already_existed = DataFileExists()
     '''
