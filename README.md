@@ -1,9 +1,9 @@
 # StryperBot
-A Discord bot made to automate Stryper Saturdays. Stryper Saturdays are when a Stryper song is posted on a Discord server for all to enjoy. However, sometimes someone forgets to post such, so automation is the solution.
+A Discord bot made to automate Stryper Saturdays. Stryper Saturdays are when a Stryper song is posted on a Discord server for all to enjoy. However, sometimes someone forgets to post one, so automation is a solution.
 
-"But what if I still want to do it myself?" you say. The answer is that StryperBot is intended to determine whether someone has already enacted Stryper Saturday, and if so, step down. However, if no-one has enacted Stryper Saturday then StryperBot will do so. The exact time the Discord members have till StryperBot posts is undetermined as of yet.
+"But what if I still want to do it myself?" you say. The answer is that StryperBot is intended to determine whether someone has already enacted Stryper Saturday, and if so, step down. However, if no-one has enacted Stryper Saturday then StryperBot will do so. The exact time the Discord members have till StryperBot posts is undetermined as of yet. ***Currently unsupported***
 
-This should be pretty easy to customise too.
+This code should be pretty easy to customise too, so it doesn't *have* to be a Stryper Saturdays bot :D
 
 ## Dependencies
 Listed in [`requirements.txt`](requirements.txt)
@@ -13,9 +13,9 @@ These files are probably not very easy to read, but were helpful in testing stuf
 
 ## Data Strucutre
 `data.json` is the database file. The highest level entries are currently `songs` and `templates`.
-- `songs`: contains a list of each song object
-    - A song object is a `<dict>` consisting of the keys `title`, `url`, `rating`, and `notes`. When adding a song to the database, `notes` is an optional part
-- `templates`: contains a list of each template
+- `songs`: contains a `list` of each song 'object':
+    - A song 'object' is a `dict` consisting of the keys `title`, `url`, `rating`, and `notes`. When adding a song to the database, `notes` is an optional part. `rating` is `int` while the rest are `str`.
+- `templates`: contains a `list` of each template
     - A template is ...
 
 
@@ -29,7 +29,7 @@ As for the instructions for adding the Bot to a server...I will get around to it
 Without knowing an business/industry methods for storing secrets, the secrets should be stored in the environment/system variables of the machine the Bot is running on. However, if the Bot is being run off an external server, then a file accessible by the Bot is the 'best' next way. Currently, a `.env` file is being used for secrets, using `python-dotenv` library to make `os.getenv("token string")` read from a `.env` instead from system environment variables, easily.
 
 Secrets:
-- Bot token (obviously)
+- `STRYPER_BOT_TOKEN` (obviously)
 - `DEBUG_CHANNEL_ID` is the separate debug channel.
 - `DEPLOYED_CHANNEL_ID` is the channel to be active in.
 - `AUTHOR_NAME` is the discord username of the author/owner of the Bot. Allows 'superuser' privileges, eg 'slash' commands.
@@ -42,6 +42,6 @@ Secrets:
 Commands:
 - `alive`: post a message saying its alive. Basically a command (available to **everyone**) to check if it is running.
 - `add`: adds a song to database. Has parameters `youtube_url` (`str`), `rating` (`int`, from 0 to 10), and `notes` (`str`) which can be contain in quotes or not (program currently doesn't care) and is just any additional thoughts on that song. Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
-- ...
+- ***...more to come...***
 
 Slash command prefix is `.` instead of the default (?) `/`. Therefore, to trigger `alive`, post `.alive` in discord channel
