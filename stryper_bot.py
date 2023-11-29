@@ -16,6 +16,8 @@ from bs4 import BeautifulSoup
 
 
 ###Constants
+DEBUG = True
+
 JSON_INDENTS = 4
 DATA_FILE = "data.json"
 
@@ -25,11 +27,11 @@ TRIGGER_DAY_NUM = 2 # Mon==0,...Sun==6 according to datetime documentation (29th
 
 #bot setup
 botIntents = discord.Intents.default()
-botIntents.message_content = True #enables sending messages?
-
+botIntents.message_content = True 
 Bot = discord.ext.commands.Bot(command_prefix=".", intents=botIntents)
+
 CHANNEL = None #the channel to post messages into
-ALLOWED_CHANNEL_IDS = set() #wanted something immutable
+PRIVILEGED_MEMBERS = set() #wanted something immutable
 
 load_dotenv()
 
@@ -38,18 +40,24 @@ def get_token():
     assert BOT_TOKEN is not None
     return BOT_TOKEN
 
-def set_allowed_channels():
-    allowed_channel_id_strings = os.getenv('ALLOWED_CHANNEL_IDS')
-    assert allowed_channel_id_strings is not None
+def load_privileged_members():
+    privileged_member_names_str = os.getenv('PRIVILEGED_MEMBER_NAMES')
+    assert privileged_member_names_str is not None
 
-    print(allowed_channel_id_strings, type(allowed_channel_id_strings))
-
-    allowed_channel_ids = allowed_channel_id_strings.split(',')
+    privileged_member_names = privileged_member_names_str.split(',')
     
-    for id in allowed_channel_ids:
-        ALLOWED_CHANNEL_IDS.add(int(id))
+    for id in privileged_member_names:
+        PRIVILEGED_MEMBERS.add(int(id))
 
-    print(f"CHANNELS: {ALLOWED_CHANNEL_IDS}")
+    print(f"PRIVILEGED_MEMBERS: {PRIVILEGED_MEMBERS}")
+
+async def get_channel(DEBUG=True):
+    if DEBUG:
+        channel_id = os.getenv('DEBUG_CHANNEL_ID')
+    else:
+        channel_id = os.getenv('DEPLOYED_CHANNEL_ID')
+
+    return Bot.get_channel(channel_id)
 
     
 
@@ -158,9 +166,9 @@ def _getRandomSong():
 
 
 ##Bot functions
-async def isAllowedChannel(context):
-    ctx_channel = context.channel
-    return ctx_channel.id in ALLOWED_CHANNEL_IDS
+async def isMemberPrivileged(context):
+    ctx_message = context.message
+    return ctx_message.name in PRIVILEGED_MEMBERS
 
 
 async def postSong(CHANNEL, song):
@@ -198,7 +206,7 @@ async def alive(context):
 
 @Bot.command()
 async def greet(context):   
-    is_channel_allowed = await isAllowedChannel(context) 
+    is_channel_allowed = await isMemberPrivileged(context) 
     if is_channel_allowed:
         await context.send("Why hello there!") #the equivalent to CHANNEL.send(msg)
 
@@ -263,20 +271,17 @@ async def update(context):
 async def on_ready():
     global CHANNEL
 
-    set_allowed_channels()
+    load_privileged_members()
     
-    CHANNEL = Bot.get_channel(list(ALLOWED_CHANNEL_IDS)[0]) #default channel is the first one
+    CHANNEL = get_channel(DEBUG)
     
 
     #prints
-    print(f"{Bot.user} has connected to Discord!")
-    print(f"Using channel: {CHANNEL}, of type '{type(CHANNEL)}  '")
+    print(f"{Bot.user} has connected to Discord! \n\tUsing channel: {CHANNEL}")
 
     #loop functions
-    await CHANNEL.send("yo")
     #await chirp.start(" hi!") #just a test function
-    
-
+    await CHANNEL.send(f"Trigger time set for: u")
     await trigger.start()
 
     
