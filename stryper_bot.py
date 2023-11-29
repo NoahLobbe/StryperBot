@@ -6,6 +6,7 @@ import random as rand
 #denpendencies
 import discord
 import discord.ext.commands
+import discord.ext.tasks
 import validators
 from dotenv import load_dotenv
 import requests
@@ -137,9 +138,21 @@ async def postSong(ctx, song):
     if note != "": await ctx.send(note)
 
 
+@discord.ext.tasks.loop(seconds=30)
+async def chirp():
+    StryperBotTesting_id = 1176818000477835295
+    guild = Bot.get_guild(StryperBotTesting_id)
+    ctx = guild.system_channel
+    await ctx.send("chirp")
+    print("chirped")
+
+
 @Bot.event
 async def on_ready():
     print(f"{Bot.user} has connected to Discord!")
+    #print(Bot.guilds)
+
+    chirp.start() #start the loop 
 
 @Bot.command()
 async def greet(ctx):    
