@@ -1,6 +1,8 @@
 #standard python libraries
 import os
 import json
+import aiohttp
+import datetime
 import random as rand
 
 #denpendencies
@@ -12,9 +14,14 @@ from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
 
+
 ###Constants
 JSON_INDENTS = 4
 SONGS_FILE = "songs.json"
+
+TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
+TRIGGER_TIME = datetime.time(hour=15, minute=26, tzinfo=TIMEZONE) 
+TRIGGER_DAY_NUM = 2 # Mon==0,...Sun==6 according to datetime documentation (29th Nov 2023)
 
 
 ### Setup functions
@@ -139,27 +146,34 @@ async def postSong(ctx, song):
 
 
 @discord.ext.tasks.loop(seconds=30)
-async def chirp():
+async def chirp(msg=""):
     StryperBotTesting_id = 1176818000477835295
     guild = Bot.get_guild(StryperBotTesting_id)
     ctx = guild.system_channel
-    await ctx.send("chirp")
-    print("chirped")
+    await ctx.send("chirp" + msg)
+    print("chirped" + msg)
 
 
-@Bot.event
-async def on_ready():
-    print(f"{Bot.user} has connected to Discord!")
-    #print(Bot.guilds)
 
-    chirp.start() #start the loop 
+## Bot functions for determining when to trigger (enact Stryper Saturday) :D
+@discord.ext.tasks.loop(time=TRIGGER_TIME)
+async def trigger():
+    current_time = datetime.datetime.now()
+    if current_time.day == TRIGGER_DAY_NUM:
+        print(f"Correct day! ('{current_time.day}') Triggering...")
 
+    else:
+        print("Wrong day to trigger ('{current_time.day}') :(")
+
+
+##'slash' commands (prefix may have been redefined in Bot constructor)
 @Bot.command()
 async def greet(ctx):    
     print("sending greeting...")
     await ctx.send("Why hello there!")
 
-
+async def getCTX():
+    pass
 
 @Bot.command()
 async def random(ctx):
@@ -213,6 +227,33 @@ async def add(ctx, *arguements):
 async def update(ctx):
     await ctx.send("command currently not supported...")
 
+
+@Bot.event
+async def on_ready():
+    #prints
+    print(f"{Bot.user} has connected to Discord!")
+    print(f"guilds: {Bot.guilds}")
+    print(f"channels: {Bot.get_all_channels()}")
+
+
+    curr = datetime.datetime.now()
+    #print(curr.hour == TRIGGER_TIME.hour, curr.minute == TRIGGER_TIME.minute)
+
+
+
+
+
+    #loop functions
+    #await chirp.start("hi!") #just a test function
+
+    await trigger.start()
+    
+    
+
+    print("finished startup stuff...")
+
+    
+
     
 if __name__ == "__main__":
     already_existed = SongsFileExists()
@@ -223,4 +264,8 @@ if __name__ == "__main__":
                         "Containing 4 minutes of legenedary epicness, it will get you **pumped**!")
         addSong(*default_song)
     print("loading", loadSongs())
-    Bot.run(load_token())
+
+    try:
+        Bot.run(load_token())
+    except aiohttp.client_exceptions.ClientConnectorError as e:
+        print(f"connection error running bot: \n\t{e}")
