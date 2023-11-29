@@ -17,19 +17,50 @@ from bs4 import BeautifulSoup
 
 ###Constants
 JSON_INDENTS = 4
-SONGS_FILE = "songs.json"
+DATA_FILE = "data.json"
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=15, minute=26, tzinfo=TIMEZONE) 
+TRIGGER_TIME = datetime.time(hour=15, minute=30, tzinfo=TIMEZONE) 
 TRIGGER_DAY_NUM = 2 # Mon==0,...Sun==6 according to datetime documentation (29th Nov 2023)
+
+#bot setup
+botIntents = discord.Intents.default()
+botIntents.message_content = True #enables sending messages?
+
+Bot = discord.ext.commands.Bot(command_prefix=".", intents=botIntents)
+CHANNEL = None #the channel to post messages into
+ALLOWED_CHANNEL_IDS = set() #wanted something immutable
+
+load_dotenv()
+
+def get_token():
+    BOT_TOKEN = os.getenv('STRYPER_BOT_TOKEN')
+    assert BOT_TOKEN is not None
+    return BOT_TOKEN
+
+def set_allowed_channels():
+    allowed_channel_id_strings = os.getenv('ALLOWED_CHANNEL_IDS')
+    assert allowed_channel_id_strings is not None
+
+    print(allowed_channel_id_strings, type(allowed_channel_id_strings))
+
+    allowed_channel_ids = allowed_channel_id_strings.split(',')
+    
+    for id in allowed_channel_ids:
+        ALLOWED_CHANNEL_IDS.add(int(id))
+
+    print(f"CHANNELS: {ALLOWED_CHANNEL_IDS}")
+
+    
+
 
 
 ### Setup functions
-def SongsFileExists():
+def DataFileExists():
     """Returns True if already existed, and False if file had to be made"""
-    if not os.path.exists(SONGS_FILE):
-        print(f"Making '{SONGS_FILE}'")
-        with open(SONGS_FILE, "w+") as new_file:
+    if not os.path.exists(DATA_FILE):
+        print(f"Making '{DATA_FILE}'")
+        with open(DATA_FILE, "w+") as new_file:
             data = {"songs": []}
             json.dump(data, new_file, indent=JSON_INDENTS)
         return False
@@ -52,6 +83,7 @@ def isYoutube(url):
     title = html.find("meta", attrs={"name":"title"}).attrs["content"]
     return is_youtube, title
 
+
 def validateYoutubeURL(url):
     is_valid_url = bool(validators.url(url))
     if is_valid_url:
@@ -59,9 +91,11 @@ def validateYoutubeURL(url):
     else:
         return False, ""
     
+
 def cleanYoutubeURL(url):
     cut_off_index = url.find("&") #first one found is returned, which is the start of extra needless data in url
     return url[:cut_off_index]
+
 
 def validateRating(rating_str):
     try:
@@ -74,9 +108,10 @@ def validateRating(rating_str):
         return False
 
 
-##songs file stuff
+
+### songs function
 def loadSongs():
-    with open(SONGS_FILE, "r") as read_file:
+    with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)
     
 
@@ -95,24 +130,24 @@ def doesSongExist(songs_json, song_dict):
             return True
     return False
 
-
-    
-    
+   
 def addSong(title, url, rating, notes):
     new_song = {"title":title, "url":url, "rating":rating, "notes":notes}
     current_songs_json = loadSongs()
 
     if not doesSongExist(current_songs_json, new_song):
-        with open(SONGS_FILE, "w") as write_file:
+        with open(DATA_FILE, "w") as write_file:
             current_songs_json["songs"].append(new_song) #updated
 
             json.dump(current_songs_json, write_file, indent=JSON_INDENTS)
         return True
     return False
 
+
 def getSong(index):
     songs_json = loadSongs()
     return songs_json["songs"][index]
+
 
 def _getRandomSong():
     songs_json = loadSongs()
@@ -122,35 +157,22 @@ def _getRandomSong():
 
 
 
-###Bot stuff
-def load_token():
-    load_dotenv()
-    BOT_TOKEN = os.getenv('STRYPER_BOT_TOKEN')
-    assert BOT_TOKEN is not None
-    return BOT_TOKEN
-
-botIntents = discord.Intents.default()
-botIntents.message_content = True #enables sending messages?
-
-Bot = discord.ext.commands.Bot(command_prefix=".", intents=botIntents)
-
-
-
-
 ##Bot functions
+async def isAllowedChannel(context):
+    ctx_channel = context.channel
+    return ctx_channel.id in ALLOWED_CHANNEL_IDS
 
-async def postSong(ctx, song):
+
+async def postSong(CHANNEL, song):
     msg, note = songMessage(song)
-    await ctx.send(msg)
-    if note != "": await ctx.send(note)
+    await CHANNEL.send(msg)
+    if note != "": await CHANNEL.send(note)
 
 
 @discord.ext.tasks.loop(seconds=30)
 async def chirp(msg=""):
-    StryperBotTesting_id = 1176818000477835295
-    guild = Bot.get_guild(StryperBotTesting_id)
-    ctx = guild.system_channel
-    await ctx.send("chirp" + msg)
+    print(CHANNEL, type(CHANNEL))
+    await CHANNEL.send("chirp" + msg)
     print("chirped" + msg)
 
 
@@ -159,30 +181,39 @@ async def chirp(msg=""):
 @discord.ext.tasks.loop(time=TRIGGER_TIME)
 async def trigger():
     current_time = datetime.datetime.now()
-    if current_time.day == TRIGGER_DAY_NUM:
-        print(f"Correct day! ('{current_time.day}') Triggering...")
+    day = current_time.weekday()
+    if day == TRIGGER_DAY_NUM:
+        print(f"Correct day! ('{day}') Triggering...")
 
     else:
-        print("Wrong day to trigger ('{current_time.day}') :(")
+        print(f"Wrong day to trigger ('{day}') :(")
 
 
-##'slash' commands (prefix may have been redefined in Bot constructor)
+
+### 'slash' commands (prefix may have been redefined in Bot constructor)
 @Bot.command()
-async def greet(ctx):    
-    print("sending greeting...")
-    await ctx.send("Why hello there!")
+async def alive(context):
+    await context.send("I am alive!")
+    print(context.message)
 
-async def getCTX():
+@Bot.command()
+async def greet(context):   
+    is_channel_allowed = await isAllowedChannel(context) 
+    if is_channel_allowed:
+        await context.send("Why hello there!") #the equivalent to CHANNEL.send(msg)
+
+
+async def getCHANNEL():
     pass
 
 @Bot.command()
-async def random(ctx):
+async def random(context):
     song = _getRandomSong()
-    await postSong(ctx, song)
+    await postSong(context, song)
 
 
 @Bot.command()
-async def add(ctx, *arguements):
+async def add(context, *arguements):
     print(f"User inputted: {arguements}")
 
     youtube_url = arguements[0]
@@ -205,7 +236,7 @@ async def add(ctx, *arguements):
     else:
         msg = url_invalid_str + ", and " + rating_invalid_str 
     print(msg)
-    await ctx.send(msg)
+    await context.send(msg)
 
     #prep and add song to songs file
     clean_yt_url = cleanYoutubeURL(youtube_url)
@@ -215,48 +246,44 @@ async def add(ctx, *arguements):
         
     is_success = addSong(yt_title, clean_yt_url, rating, notes)
     if is_success:
-        await postSong(ctx, getSong(-1))
+        await postSong(context, getSong(-1))
         print("...successful")
     else:
         error_msg = "Already added! Update entry using .update command"
-        await ctx.send(error_msg)
+        await context.send(error_msg)
         print(error_msg)
 
 
 @Bot.command()
-async def update(ctx):
-    await ctx.send("command currently not supported...")
+async def update(context):
+    await context.send("command currently not supported...")
 
 
 @Bot.event
 async def on_ready():
+    global CHANNEL
+
+    set_allowed_channels()
+    
+    CHANNEL = Bot.get_channel(list(ALLOWED_CHANNEL_IDS)[0]) #default channel is the first one
+    
+
     #prints
     print(f"{Bot.user} has connected to Discord!")
-    print(f"guilds: {Bot.guilds}")
-    print(f"channels: {Bot.get_all_channels()}")
-
-
-    curr = datetime.datetime.now()
-    #print(curr.hour == TRIGGER_TIME.hour, curr.minute == TRIGGER_TIME.minute)
-
-
-
-
+    print(f"Using channel: {CHANNEL}, of type '{type(CHANNEL)}  '")
 
     #loop functions
-    #await chirp.start("hi!") #just a test function
+    await CHANNEL.send("yo")
+    #await chirp.start(" hi!") #just a test function
+    
 
     await trigger.start()
-    
-    
-
-    print("finished startup stuff...")
 
     
 
     
 if __name__ == "__main__":
-    already_existed = SongsFileExists()
+    already_existed = DataFileExists()
     if not already_existed:
         default_song = ("To Hell with the Devil", 
                         "https://www.youtube.com/watch?v=sG0zAn0dL2I", 
@@ -265,7 +292,9 @@ if __name__ == "__main__":
         addSong(*default_song)
     print("loading", loadSongs())
 
+    print("-"*30)
+
     try:
-        Bot.run(load_token())
+        Bot.run(get_token())
     except aiohttp.client_exceptions.ClientConnectorError as e:
         print(f"connection error running bot: \n\t{e}")
