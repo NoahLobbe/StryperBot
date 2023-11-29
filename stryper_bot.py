@@ -21,10 +21,14 @@ DEBUG = True
 JSON_INDENTS = 4
 DATA_FILE = "data.json"
 
+# Mon==0,...Sun==6 according to datetime.weekday() documentation. Tad messy for stringifying due to the conflict of strftime() and weekday()
+DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
+
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=22, minute=14, tzinfo=TIMEZONE) 
-TRIGGER_DAY = (5, "Saturday", "Sat") # Mon==0,...Sun==6 according to datetime.weekday() documentation. Tad messy for stringifying due to the conflict of strftime() and weekday()
-TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY[1]} @ {TRIGGER_TIME.strftime('%H:%M')}"
+TRIGGER_TIME = datetime.time(hour=22, minute=36, tzinfo=TIMEZONE) 
+TRIGGER_DAY_STR = "Saturday"
+TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
+TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
 
 #bot setup
 botIntents = discord.Intents.default()
@@ -65,6 +69,11 @@ async def getChannel(DEBUG=True):
 
     
 
+### Miscen... functions
+def getKey(Dict, value):
+    for k, v in Dict.items(): 
+        if v == value:
+            return k
 
 
 ### Setup functions
@@ -194,12 +203,12 @@ async def chirp(msg=""):
 @discord.ext.tasks.loop(time=TRIGGER_TIME)
 async def trigger():
     day = datetime.datetime.now().weekday()
-    if day == TRIGGER_DAY[0]:
+    if day == TRIGGER_DAY_NUM:
         msg = "Triggering..."
     else:
-        msg = f"Wrong day to trigger, as day={day} (Mon=0, ...Sun=6) \n:("
+        day_str = getKey(DAYS_LEGEND, day) 
+        msg = f"Wrong day to trigger as today is {day_str} not {TRIGGER_DAY_STR} \n:("
 
-    await CHANNEL.send(msg)
     print(msg)
 
 
