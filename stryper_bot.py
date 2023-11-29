@@ -1,3 +1,9 @@
+"""
+GNU General Public License Version 3
+
+Created by Noah Lobbe, November 2023
+"""
+
 #standard python libraries
 import os
 import json
@@ -16,11 +22,12 @@ from bs4 import BeautifulSoup
 
 
 ###Constants
-DEBUG = True
+IS_DEBUGGING = True
 
 JSON_INDENTS = 4
 DATA_FILE = "data.json"
 
+# trigger stuff
 # Mon==0,...Sun==6 according to datetime.weekday() documentation. Tad messy for stringifying due to the conflict of strftime() and weekday()
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
@@ -37,26 +44,43 @@ Bot = discord.ext.commands.Bot(command_prefix=".", intents=botIntents)
 
 CHANNEL = None #the channel to post messages into
 PRIVILEGED_MEMBERS = set() #wanted something immutable
+AUTHOR = set()
 
-load_dotenv()
 
-def getToken():
-    BOT_TOKEN = os.getenv('STRYPER_BOT_TOKEN')
+def getBotToken():
+    """Returns token <str>"""
+    BOT_TOKEN = os.getenv("STRYPER_BOT_TOKEN")
     assert BOT_TOKEN is not None
     return BOT_TOKEN
 
+
 def loadPrivilegedMembers():
-    privileged_member_names_str = os.getenv('PRIVILEGED_MEMBER_NAMES')
+    """Loads the usernames of discord members who have Bot privileges"""
+    #general privileged
+    privileged_member_names_str = os.getenv("PRIVILEGED_MEMBER_NAMES")
     assert privileged_member_names_str is not None
 
     privileged_member_names = privileged_member_names_str.split(',')
+    privileged_members_list = []
     
     for name in privileged_member_names:
-        PRIVILEGED_MEMBERS.add(name)
+        privileged_members_list.append(name)
+
+    #get author too.
+    author_name = os.getenv("AUTHOR_NAME")
+    assert author_name is not None
+
+    if author_name not in privileged_members_list:
+        privileged_members_list.insert(0, author_name)
+
+    PRIVILEGED_MEMBERS = set(privileged_members_list)
+    AUTHOR = set(author_name) #don't want it mutable
 
     #print(f"PRIVILEGED_MEMBERS: {PRIVILEGED_MEMBERS}")
 
+
 async def getChannel(DEBUG=True):
+    """Returns a discord.py channel object to be used"""
     if DEBUG:
         channel_id_str = os.getenv('DEBUG_CHANNEL_ID')
     else:
@@ -71,6 +95,7 @@ async def getChannel(DEBUG=True):
 
 ### Miscen... functions
 def getKey(Dict, value):
+    """Returns key from Dict <dict> for a given 'value'"""
     for k, v in Dict.items(): 
         if v == value:
             return k
@@ -81,17 +106,22 @@ def DataFileExists():
     """Returns True if already existed, and False if file had to be made"""
     if not os.path.exists(DATA_FILE):
         print(f"Making '{DATA_FILE}'")
+
         with open(DATA_FILE, "w+") as new_file:
-            data = {"songs": []}
+            data = {
+                "songs": [], 
+                "templates":[]
+                }
             json.dump(data, new_file, indent=JSON_INDENTS)
         return False
     return True
 
 
 
-### Functions for bot
-##validate if a user provide url is a stryper youtube video
-def isYoutube(url):
+### Determines
+def isYoutube(url:str):
+    """Returns bool for whether 'url' <str> is a youtube video url,
+    and string of the youtube video's title if is legit."""
     is_youtube = False
     R = requests.get(url)
     html = BeautifulSoup(R.content, features="html.parser")
@@ -107,6 +137,8 @@ def isYoutube(url):
 
 
 def validateYoutubeURL(url):
+    """Returns bool as to whether 'url' <str> is legit 
+    and if it is actually a youtube video link"""
     is_valid_url = bool(validators.url(url))
     if is_valid_url:
         return isYoutube(url)       
@@ -115,11 +147,13 @@ def validateYoutubeURL(url):
     
 
 def cleanYoutubeURL(url):
+    """Gets rid of extra unneccessary data in URL"""
     cut_off_index = url.find("&") #first one found is returned, which is the start of extra needless data in url
     return url[:cut_off_index]
 
 
 def validateRating(rating_str):
+    """Returns bool as to whether rating is valid"""
     try:
         rating = float(rating_str)
         if (rating).is_integer():
@@ -133,27 +167,32 @@ def validateRating(rating_str):
 
 ### songs function
 def loadSongs():
+    """Returns a JSON object..."""
     with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)
     
 
-def songMessage(song_dict):
+def songMessage(song:dict):
+    """Returns two strings based on the 'song' <dict>, the first is the main bit, 
+    and the second is the notes to be posted afterwards"""
     intro = "***Hello everybody and WELCOME to Stryper Saturday!!!***" 
-    description = f"\nToday is the amazing song *{song_dict['title']}*, with a rating of {song_dict['rating']}/10: "
-    link = song_dict["url"]
-    notes = song_dict["notes"]
-    return intro + description + link, notes
+    description = f"\nToday is the amazing song *{song['title']}*, with a rating of {song['rating']}/10: "
+    link = song["url"]
+    notes = song["notes"]
+    return (intro + description + link), notes
 
 
-def doesSongExist(songs_json, song_dict):
-    for song in songs_json["songs"]:
-        if ((song_dict["url"] == song["url"]) or (song_dict["title"] == song["title"])):
+def doesSongExist(songs_json, song:dict):
+    """Returns bool"""
+    for s in songs_json["songs"]:
+        if ((song["url"] == s["url"]) or (song["title"] == s["title"])):
             print("already exists!")
             return True
     return False
 
    
 def addSong(title, url, rating, notes):
+    """Returns False if song already exists, and True if successful in adding song"""
     new_song = {"title":title, "url":url, "rating":rating, "notes":notes}
     current_songs_json = loadSongs()
 
@@ -167,41 +206,45 @@ def addSong(title, url, rating, notes):
 
 
 def getSong(index):
+    """Returns a song <dict> of the given index in database"""
     songs_json = loadSongs()
     return songs_json["songs"][index]
 
 
 def _getRandomSong():
+    "Returns a song <dict>"
     songs_json = loadSongs()
-    song = rand.choice(songs_json["songs"])
-    print(f"Random song: {song}")
-    return song
+    song_dict = rand.choice(songs_json["songs"])
+    print(f"Random song: {song_dict}")
+    return song_dict
 
 
 
-##Bot functions
+### Bot functions (not 'slash' commands)
 async def isMemberPrivileged(context):
+    """Returns bool"""
     ctx_message = context.message
     return ctx_message.name in PRIVILEGED_MEMBERS
 
 
-async def postSong(CHANNEL, song):
+async def postSong(context, song:dict):
+    """Uses the 'song' <dict> to make pretty text to post to 'context'"""
     msg, note = songMessage(song)
-    await CHANNEL.send(msg)
+    await context.send(msg)
     if note != "": await CHANNEL.send(note)
 
-
+'''
 @discord.ext.tasks.loop(seconds=30)
 async def chirp(msg=""):
     print(CHANNEL, type(CHANNEL))
     await CHANNEL.send("chirp" + msg)
     print("chirped" + msg)
+'''
 
 
-
-## Bot functions for determining when to trigger (enact Stryper Saturday) :D
 @discord.ext.tasks.loop(time=TRIGGER_TIME)
 async def trigger():
+    """'Triggers' everyday at a certain time, but only properly triggers if today is the correct day"""
     day = datetime.datetime.now().weekday()
     if day == TRIGGER_DAY_NUM:
         msg = "Triggering..."
@@ -216,30 +259,37 @@ async def trigger():
 ### 'slash' commands (prefix defined in Bot constructor)
 @Bot.command()
 async def alive(context):
+    """Simple test slash command to determine if Bot is operating. Anybody can run this."""
     msg = f"I, {Bot.user.name}, am alive!"
     await context.send(msg)
     print(msg)
     print(context.message)
 
+"""
 @Bot.command()
 async def greet(context):   
-    is_member_allowed = await isMemberPrivileged(context) 
-    if is_member_allowed:
+    is_member_privileged = await isMemberPrivileged(context) 
+    if is_member_privileged:
         await context.send("Why hello there!")
+"""
 
 
 @Bot.command()
 async def random(context):
-    song = _getRandomSong()
-    await postSong(context, song)
+    """Posts a random song from database, provided the member to call random has the privilege"""
+    is_member_privileged = await isMemberPrivileged(context) 
+    if is_member_privileged:
+        song = _getRandomSong()
+        await postSong(context, song)
 
 
 @Bot.command()
-async def add(context, *arguements):
-    print(f"User inputted: {arguements}")
+async def add(context, youtube_url, rating, *raw_notes):
+    """Adds song to database. 'rating' needs to be a positive integer from 0 to 10,
+    and 'raw_notes' is just in case some adds song notes without quotes, as discord.py
+    seems to split arguements by spaces."""
+    print(f"User inputted: '{youtube_url}', '{rating}', and '{raw_notes}'")
 
-    youtube_url = arguements[0]
-    rating = arguements[1]
 
     #validate user input
     url_is_legit, yt_title = validateYoutubeURL(youtube_url)
@@ -263,8 +313,8 @@ async def add(context, *arguements):
     #prep and add song to songs file
     clean_yt_url = cleanYoutubeURL(youtube_url)
     notes = ""
-    if len(arguements) > 2:
-        notes = " ".join(arguements[2:])
+    if len(raw_notes) > 2:
+        notes = " ".join(raw_notes[2:])
         
     is_success = addSong(yt_title, clean_yt_url, rating, notes)
     if is_success:
@@ -283,10 +333,11 @@ async def update(context):
 
 @Bot.event
 async def on_ready():
+    """Runs when Bot is ready, kind of like a class constructor/init/"""
     global CHANNEL
 
     loadPrivilegedMembers()
-    CHANNEL = await getChannel(DEBUG)
+    CHANNEL = await getChannel(IS_DEBUGGING) 
 
     #prints
     print(f"{Bot.user} has connected to Discord, into '{CHANNEL}' channel!")
@@ -300,18 +351,23 @@ async def on_ready():
 
     
 if __name__ == "__main__":
+    load_dotenv()  #enable os.getenv() to actually get 'environment variables' from .env file
+
+
     already_existed = DataFileExists()
+    '''
     if not already_existed:
         default_song = ("To Hell with the Devil", 
                         "https://www.youtube.com/watch?v=sG0zAn0dL2I", 
                         10, 
                         "Containing 4 minutes of legenedary epicness, it will get you **pumped**!")
         addSong(*default_song)
+    '''
 
     #print("loading", loadSongs())
 
     try:
-        Bot.run(getToken())
+        Bot.run(getBotToken())
 
     except aiohttp.client_exceptions.ClientConnectorError as e:
         print(f"...oops I caught a connection error running the bot: \n\t{e}")
