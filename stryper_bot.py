@@ -300,13 +300,24 @@ async def postSong(context, song:dict):
     await context.send(msg)
     if note != "": await CHANNEL.send(note)
 
-'''
-@discord.ext.tasks.loop(seconds=30)
-async def chirp(msg=""):
-    print(CHANNEL, type(CHANNEL))
-    await CHANNEL.send("chirp" + msg)
-    print("chirped" + msg)
-'''
+
+async def _addSong(context, yt_title, youtube_url, rating, raw_notes):
+    #prep and add song to songs file
+        clean_yt_url = cleanYoutubeURL(youtube_url)
+        notes = ""
+        if len(raw_notes) > 2:
+            notes = " ".join(raw_notes[2:])
+            
+        is_success = addSong(yt_title, clean_yt_url, rating, notes)
+        if is_success:
+            await postSong(context, getSong(-1))
+            print("...successful")
+        else:
+            error_msg = "Already added! Update entry using .update command"
+            await context.send(error_msg)
+            print(error_msg)
+
+
 
 
 @discord.ext.tasks.loop(time=TRIGGER_TIME)
@@ -357,46 +368,37 @@ async def add(context, youtube_url, rating, *raw_notes):
     and 'raw_notes' is just in case some adds song notes without quotes, as discord.py
     seems to split arguements by spaces."""
 
-    print(f"User inputted: '{youtube_url}', '{rating}', and '{raw_notes}'")
+    is_member_privileged = await isMemberPrivileged(context) 
+    if is_member_privileged:
 
-    #validate user input
-    url_is_legit, yt_title = validateYoutubeURL(youtube_url)
-    rating_is_legit = validateRating(rating)
+        print(f"User inputted: '{youtube_url}', '{rating}', and '{raw_notes}'")
 
-    url_invalid_str = f"'{youtube_url}' is not reachable"
-    rating_invalid_str = f"'{rating}' is invalid, has to be a positive float from 0 to 10"
-    
-    #output stuff
-    entry_is_valid = False
-    if url_is_legit and rating_is_legit:
-        msg = "URL and rating are valid..."
-        entry_is_valid = True
-    elif url_is_legit and not rating_is_legit:
-        msg = rating_invalid_str
-    elif not url_is_legit and rating_is_legit:
-        msg = url_invalid_str
-    else:
-        msg = url_invalid_str + ", and " + rating_invalid_str 
+        #validate user input
+        url_is_legit, yt_title = validateYoutubeURL(youtube_url)
+        rating_is_legit = validateRating(rating)
+
+        url_invalid_str = f"'{youtube_url}' is not reachable"
+        rating_invalid_str = f"'{rating}' is invalid, has to be a positive float from 0 to 10"
         
-    print(msg)
-    await context.send(msg)
+        #output stuff
+        if url_is_legit and rating_is_legit:
+            msg = "URL and rating are valid..."
+            await _addSong(context, yt_title, youtube_url, rating, raw_notes)
 
-    if entry_is_valid:
-        #prep and add song to songs file
-        clean_yt_url = cleanYoutubeURL(youtube_url)
-        notes = ""
-        if len(raw_notes) > 2:
-            notes = " ".join(raw_notes[2:])
-            
-        is_success = addSong(yt_title, clean_yt_url, rating, notes)
-        if is_success:
-            await postSong(context, getSong(-1))
-            print("...successful")
+        elif url_is_legit and not rating_is_legit:
+            msg = rating_invalid_str
+
+        elif not url_is_legit and rating_is_legit:
+            msg = url_invalid_str
+
         else:
-            error_msg = "Already added! Update entry using .update command"
-            await context.send(error_msg)
-            print(error_msg)
+            msg = url_invalid_str + ", and " + rating_invalid_str 
+            
+        print(msg)
+        await context.send(msg)
 
+    
+        
 
 @Bot.event
 async def on_ready():
