@@ -31,14 +31,14 @@ It is recommended that a 'superuser'/'debug' server/guild or text channel is all
 ***As for the instructions for adding the Bot to a server...I will get around to it :D***
 
 
-### Secrects - Bot tokens, etc.
-Without knowing an business/industry methods for storing secrets, the secrets should be stored in the environment/system variables of the machine the Bot is running on. However, if the Bot is being run off an external server, then a file accessible by the Bot is the 'best' next way. Currently, a `.env` file is being used for secrets, using `python-dotenv` library to make `os.getenv("token string")` read from a `.env` instead from system environment variables, easily.
+### Secrects
+Without knowing an business/industry methods for storing secrets, the secrets should be stored in the environment/system variables of the machine the Bot is running on. However, if the Bot is being run off an external server, then a file accessible by the Bot is the 'best' next way. Currently, a `.env` file is being used for secrets, using `python-dotenv` library to make `os.getenv("token string")` read from a `.env`, easily.
 
 Secrets:
 - `STRYPER_BOT_TOKEN` (obviously)
-- `DEBUG_CHANNEL_ID` is the separate debug channel.
-- `DEPLOYED_CHANNEL_ID` is the channel to be active in.
-- `AUTHOR_NAME` is the discord username of the author/owner of the Bot. Allows 'superuser' privileges, eg 'slash' commands.
+- `DEBUG_CHANNEL_ID` is the separate debug channel
+- `DEPLOYED_CHANNEL_ID` is the channel to be active in
+- `AUTHOR_NAME` is the discord username of the author/owner of the Bot. Allows 'superuser' privileges, more than just privileged members. ***None yet***
 - `PRIVILEGED_MEMBER_NAMES` is the list of members who have the privilege to use 'slash' commands. Example: `PRIVILEGED_MEMBER_NAMES=username1,username2`
 
 
@@ -51,4 +51,4 @@ Commands:
     Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
 - ***...more to come...***
 
-Slash command prefix is `.` instead of the default (?) `/`. Therefore, to trigger `alive`, post `.alive` in discord channel
+Slash command prefix is `.`. Therefore, to use `alive` command, post `.alive` in discord channel
