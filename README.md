@@ -42,7 +42,7 @@ Secrets:
 - `PRIVILEGED_MEMBER_NAMES` is the list of members who have the privilege to use 'slash' commands. Example: `PRIVILEGED_MEMBER_NAMES=username1,username2`
 
 
-# 'Slash' Commands
+## 'Slash' Commands
 'Slash' commands can only be run by those in `PRIVILEGED_MEMBERS`, type is `set`, (which also contains `AUTHOR_NAME` for ease of use). Currently, it does not matter what channel the privileged member is to use any 'slash' command, it will respond in the same channel.
 
 Commands:
@@ -51,4 +51,4 @@ Commands:
     Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
 - ***...more to come...***
 
-Slash command prefix is `.`. Therefore, to use `alive` command, post `.alive` in discord channel
+Slash command prefix is `.`, therefore, to use `alive` command, post `.alive` in discord channel
