@@ -246,27 +246,51 @@ def songMessage(song:dict):
 
 
 def doesSongExist(songs_list:list, song:dict):
-    """Returns bool"""
-    for s in songs_list:
-        if ((song["url"] == s["url"]) or (song["title"] == s["title"])):
+    """Returns (bool, int). 
+    Bool for the existence of song in database, and int of index of existing song.
+    If song doesn't exist, then index is 0"""
+    for i, s in songs_list:
+        if (song["url"] == s["url"]):
             print("already exists!")
-            return True
-    return False
+            return True, i
+    return False, 0
 
    
 def addSong(title, url, rating, notes):
-    """Returns False if song already exists, and True if successful in adding song"""
+    """Returns True if successful in adding the song to database or overwriting if"""
     new_song = {"title":title, "url":url, "rating":rating, "notes":notes}
 
     current_data_file = getDataFile()
     current_songs_list = current_data_file["songs"]
 
-    if not doesSongExist(current_songs_list, new_song):
+    song_already_exists, index_of_song = doesSongExist(current_songs_list, new_song)
+    if not song_already_exists:
+        #add song to database
         with open(DATA_FILE, "w") as write_file:
             current_songs_list.append(new_song) #should also update current_data_file, right?
 
             json.dump(current_data_file, write_file, indent=JSON_INDENTS)
         return True
+    else:
+        return False
+    
+def updateSong(song:dict):
+    """Updates song rating and notes in database if it exists. Returns bool of success/failure"""    
+    current_data_file = getDataFile()
+    current_songs_list = current_data_file["songs"]
+
+    song_already_exists, index_of_song = doesSongExist(current_songs_list, song)
+
+    if song_already_exists:
+        rating_is_legit = validateRating(song["rating"])
+        if rating_is_legit:
+            #update song entry    
+            current_songs_list[index_of_song]["rating"] = song["rating"]
+            current_songs_list[index_of_song]["notes"] = song["notes"]
+
+            with open(DATA_FILE, "w") as write_file:
+                json.dump(current_data_file, write_file, indent=JSON_INDENTS)
+            return True
     return False
 
 
@@ -376,26 +400,27 @@ async def add(context, youtube_url, rating, *raw_notes):
         #validate user input
         url_is_legit, yt_title = validateYoutubeURL(youtube_url)
         rating_is_legit = validateRating(rating)
-
-        url_invalid_str = f"'{youtube_url}' is not reachable"
-        rating_invalid_str = f"'{rating}' is invalid, has to be a positive float from 0 to 10"
         
         #output stuff
         if url_is_legit and rating_is_legit:
-            msg = "URL and rating are valid..."
             await _addSong(context, yt_title, youtube_url, rating, raw_notes)
+            await context.send("Added!")
 
-        elif url_is_legit and not rating_is_legit:
-            msg = rating_invalid_str
+        else:    
+            url_invalid_str = f"'{youtube_url}' is not reachable"
+            rating_invalid_str = f"'{rating}' is invalid, has to be a positive float from 0 to 10"
 
-        elif not url_is_legit and rating_is_legit:
-            msg = url_invalid_str
+            if url_is_legit and not rating_is_legit:
+                msg = rating_invalid_str
 
-        else:
-            msg = url_invalid_str + ", and " + rating_invalid_str 
-            
-        print(msg)
-        await context.send(msg)
+            elif not url_is_legit and rating_is_legit:
+                msg = url_invalid_str
+
+            else:
+                msg = url_invalid_str + ", and " + rating_invalid_str 
+                
+            print(msg)
+            await context.send(msg)
 
     
         
