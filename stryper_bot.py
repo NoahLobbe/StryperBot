@@ -193,7 +193,7 @@ def randomTemplate():
     if len(templates) > 0:
         return rand.choice(getTemplates())
     else:
-        default = "***Hello everybody and WELCOME to Stryper Saturday!!!*** \nToday is the amazing song *{title}*, with a rating of {rating}/10: " 
+        default = "***Hello everybody and WELCOME to Stryper Saturday!!!*** \nToday is the amazing song *{title}*, with a rating of {rating}/10: {url}" 
         writeTemplates(default)
         return default
 
@@ -237,10 +237,9 @@ def songMessage(song:dict):
 
     template = randomTemplate()
     body = _insertSongToTemplate(template, song)
-    url = song["url"]
     notes = song["notes"]
 
-    return (body + url), notes
+    return body, notes
     
 
 

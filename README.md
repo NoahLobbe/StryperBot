@@ -16,7 +16,7 @@ These files are probably not very easy to read, but were helpful in testing stuf
 - `songs`: contains a `list` of each song 'object':
     - A song 'object' is a `dict` consisting of the keys `title`, `url`, `rating`, and `notes`. When adding a song to the database, `notes` is an optional part. `rating` is `int` while the rest are `str`.
 - `templates`: contains a `list` of each template
-    - A template is ...
+    - A template is just a string. However, there are 'keys'; `{title}` is replaced with song title, `{rating}` with song rating, and `{url}` with song url. Song notes are always added after template.
 
 
 ## Deployment
