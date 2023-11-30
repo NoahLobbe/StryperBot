@@ -249,9 +249,9 @@ def doesSongExist(songs_list:list, song_url:str):
     """Returns (bool, int). 
     Bool for the existence of song in database, and int of index of existing song.
     If song doesn't exist, then index is 0"""
-    for i, s in songs_list:
+    for i, s in enumerate(songs_list):
         if (song_url == s["url"]):
-            print("already exists!")
+            print("exists!")
             return True, i
     return False, 0
 
@@ -290,8 +290,9 @@ def updateSong(song_url, new_rating, new_notes):
 
             with open(DATA_FILE, "w") as write_file:
                 json.dump(current_data_file, write_file, indent=JSON_INDENTS)
-            return True
-    return False
+            return True, "success"
+        return False, "invalid rating"
+    return False, "doesn't exist"
 
 
 def getSong(index):
@@ -363,7 +364,7 @@ async def trigger():
 @Bot.command()
 async def alive(context):
     """Simple test slash command to determine if Bot is operating. Anybody can run this."""
-    msg = f"I, {Bot.user.name}, *AM ALIVE!!!*"
+    msg = f"*I AM ALIVE!!!*"
     await context.send(msg)
     print(msg)
     print(context.message)
@@ -426,12 +427,23 @@ async def add(context, youtube_url, rating, *raw_notes):
 async def update(context, song_url, new_rating, *new_notes):
     """Updates database provided the song_url is in the database"""
     is_member_privileged = await isMemberPrivileged(context) 
+
     if is_member_privileged:
         url_is_legit, _ = validateYoutubeURL(song_url)
+
         if url_is_legit:
-            await updateSong(song_url, new_rating, new_notes)
-            print(f"Updated song...{song_url}, {new_rating}, {new_notes}")
-        
+            is_successful, status_msg = updateSong(song_url, new_rating, new_notes)
+
+            if is_successful:
+                msg = status_msg
+            else:
+                msg = f"ERROR: {status_msg}"  
+
+        else:         
+            msg = f"ERROR: invalid url passed, '{song_url}'"
+
+        await context.send(msg)
+        print(msg) 
 
 @Bot.event
 async def on_ready():

@@ -3,14 +3,19 @@
         {
             "title": "To Hell with the Devil",
             "url": "https://www.youtube.com/watch?v=sG0zAn0dL2I",
-            "rating": 10,
-            "notes": "Containing 4 minutes of legenedary epicness, it will get you **pumped**!"
+            "rating": "9.9999999",
+            "notes": [
+                "***LEGENDARY!!!***"
+            ]
         },
         {
             "title": "Soldiers Under Command (Re-Recorded)",
             "url": "https://www.youtube.com/watch?v=EhRJiiF11vo",
-            "rating": "5",
-            "notes": ""
+            "rating": "6",
+            "notes": [
+                "(Updated",
+                "rating!!!)"
+            ]
         },
         {
             "title": "No Rest For The Wicked",
