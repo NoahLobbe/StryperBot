@@ -177,6 +177,43 @@ def getDataFile():
 def getTemplates():
     with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)["templates"]
+    
+def writeTemplates(new_template:str):
+    current_database = getDataFile()
+    current_templates_list = current_database["templates"]
+
+    with open(DATA_FILE, "w") as write_file:
+        current_templates_list.append(new_template)
+
+        json.dump(current_database, write_file, indent=JSON_INDENTS)
+
+    
+def randomTemplate():
+    templates = getTemplates()
+    if len(templates) > 0:
+        return rand.choice(getTemplates())
+    else:
+        default = "***Hello everybody and WELCOME to Stryper Saturday!!!*** \nToday is the amazing song *{title}*, with a rating of {rating}/10: " 
+        writeTemplates(default)
+        return default
+
+
+def _insertSongToTemplate(template:str, song:dict):
+    """Returns a str which has made o"""
+    new_string = template
+    replacements = [
+        ("{title}", song["title"]),
+        ("{url}",song["url"]),
+        ("{rating}", str(song['rating'])), #has to be a str for .replace(...)
+        ("{notes}", song["notes"])
+    ]
+    for replacement in replacements:
+        new_string = new_string.replace(replacement[0], replacement[1])
+    return new_string
+
+        
+
+
 
 
 
@@ -190,11 +227,22 @@ def getSongs():
 def songMessage(song:dict):
     """Returns two strings based on the 'song' <dict>, the first is the main bit, 
     and the second is the notes to be posted afterwards"""
+    '''
     intro = "***Hello everybody and WELCOME to Stryper Saturday!!!***" 
     description = f"\nToday is the amazing song *{song['title']}*, with a rating of {song['rating']}/10: "
     link = song["url"]
     notes = song["notes"]
     return (intro + description + link), notes
+    '''
+
+    template = randomTemplate()
+    body = _insertSongToTemplate(template, song)
+    url = song["url"]
+    notes = song["notes"]
+
+    return (body + url), notes
+    
+
 
 
 def doesSongExist(songs_list:list, song:dict):
@@ -232,7 +280,7 @@ def _getRandomSong():
     "Returns a song <dict>"
     songs_list = getSongs()
     song_dict = rand.choice(songs_list)
-    print(f"Random song: {song_dict}")
+    #print(f"Random song: {song_dict}")
     return song_dict
 
 
@@ -376,6 +424,11 @@ if __name__ == "__main__":
     '''
 
     #print("loading", loadSongs())
+
+    song = _getRandomSong()
+    msg, notes = songMessage(song)
+    print(msg, "\n" + notes)
+
 
     try:
         Bot.run(getBotToken())
