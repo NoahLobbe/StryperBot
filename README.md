@@ -17,11 +17,11 @@ These files are probably not very easy to read, but were helpful in testing stuf
     - `song`: is a `dict` consisting of the keys `title`, `url`, `rating`, and `notes`. `rating` is an `float` (from 0 to 10) while the rest are `str`'s. When adding a song to the database, `notes` is optional
 
 - `templates`: contains a `list` of `str`'s which represent a `template`
-    - `template`: is a `str`. However, there are codes that are reserved for replacing with `song` information:
+    - `template`: a `str` containing codes that are reserved for replacement with `song` information:
         - `{title}` is replaced with song title
         - `{rating}` with song rating
-        - `{url}` with song url. 
-    Song notes are always printed/posted after template.
+        - `{url}` with song url
+        - Song notes are always printed/posted after template, and thus don't have a code
     
 
 
