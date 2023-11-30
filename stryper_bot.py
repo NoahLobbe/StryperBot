@@ -32,8 +32,8 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=22, minute=36, tzinfo=TIMEZONE) 
-TRIGGER_DAY_STR = "Saturday"
+TRIGGER_TIME = datetime.time(hour=16, minute=21, tzinfo=TIMEZONE) 
+TRIGGER_DAY_STR = "Thursday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
 
@@ -56,6 +56,7 @@ def getBotToken():
 
 def loadPrivilegedMembers():
     """Loads the usernames of discord members who have Bot privileges"""
+    global PRIVILEGED_MEMBERS
     #general privileged
     privileged_member_names_str = os.getenv("PRIVILEGED_MEMBER_NAMES")
     assert privileged_member_names_str is not None
@@ -71,12 +72,12 @@ def loadPrivilegedMembers():
     assert author_name is not None
 
     if author_name not in privileged_members_list:
-        privileged_members_list.insert(0, author_name)
+        privileged_members_list.append(author_name) #order doesn't matter as it wil be turned into a `set``
 
     PRIVILEGED_MEMBERS = set(privileged_members_list)
     AUTHOR = set(author_name) #don't want it mutable
 
-    #print(f"PRIVILEGED_MEMBERS: {PRIVILEGED_MEMBERS}")
+    #print(f"PRIVILEGED_MEMBERS (with author): {PRIVILEGED_MEMBERS}")
 
 
 async def getChannel(DEBUG=True):
@@ -288,7 +289,9 @@ def _getRandomSong():
 async def isMemberPrivileged(context):
     """Returns bool"""
     ctx_message = context.message
-    return ctx_message.name in PRIVILEGED_MEMBERS
+    res =  ctx_message.author.name in PRIVILEGED_MEMBERS
+    print(ctx_message.author.name, type(ctx_message.author.name), res, PRIVILEGED_MEMBERS)
+    return res
 
 
 async def postSong(context, song:dict):
@@ -316,6 +319,7 @@ async def trigger():
         day_str = getKey(DAYS_LEGEND, day) 
         msg = f"Wrong day to trigger as today is {day_str} not {TRIGGER_DAY_STR} \n:("
 
+    await CHANNEL.send(msg)
     print(msg)
 
 
@@ -324,7 +328,7 @@ async def trigger():
 @Bot.command()
 async def alive(context):
     """Simple test slash command to determine if Bot is operating. Anybody can run this."""
-    msg = f"I, {Bot.user.name}, am alive!"
+    msg = f"I, {Bot.user.name}, *AM ALIVE!!!*"
     await context.send(msg)
     print(msg)
     print(context.message)
@@ -360,34 +364,38 @@ async def add(context, youtube_url, rating, *raw_notes):
     rating_is_legit = validateRating(rating)
 
     url_invalid_str = f"'{youtube_url}' is not reachable"
-    rating_invalid_str = f"'{rating}' is invalid, has to be a positive integer from 0 to 10"
+    rating_invalid_str = f"'{rating}' is invalid, has to be a positive float from 0 to 10"
     
-    #output stufff
+    #output stuff
+    entry_is_valid = False
     if url_is_legit and rating_is_legit:
         msg = "URL and rating are valid..."
+        entry_is_valid = True
     elif url_is_legit and not rating_is_legit:
         msg = rating_invalid_str
     elif not url_is_legit and rating_is_legit:
         msg = url_invalid_str
     else:
         msg = url_invalid_str + ", and " + rating_invalid_str 
+        
     print(msg)
     await context.send(msg)
 
-    #prep and add song to songs file
-    clean_yt_url = cleanYoutubeURL(youtube_url)
-    notes = ""
-    if len(raw_notes) > 2:
-        notes = " ".join(raw_notes[2:])
-        
-    is_success = addSong(yt_title, clean_yt_url, rating, notes)
-    if is_success:
-        await postSong(context, getSong(-1))
-        print("...successful")
-    else:
-        error_msg = "Already added! Update entry using .update command"
-        await context.send(error_msg)
-        print(error_msg)
+    if entry_is_valid:
+        #prep and add song to songs file
+        clean_yt_url = cleanYoutubeURL(youtube_url)
+        notes = ""
+        if len(raw_notes) > 2:
+            notes = " ".join(raw_notes[2:])
+            
+        is_success = addSong(yt_title, clean_yt_url, rating, notes)
+        if is_success:
+            await postSong(context, getSong(-1))
+            print("...successful")
+        else:
+            error_msg = "Already added! Update entry using .update command"
+            await context.send(error_msg)
+            print(error_msg)
 
 
 @Bot.event
