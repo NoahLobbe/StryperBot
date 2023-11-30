@@ -393,41 +393,42 @@ async def add(context, youtube_url, rating, *raw_notes):
 @Bot.event
 async def on_ready():
     """Runs when Bot is ready, kind of like a class constructor/init/"""
+    #setup variables
     global CHANNEL
+    CHANNEL = await getChannel(IS_DEBUGGING) 
 
     loadPrivilegedMembers()
-    CHANNEL = await getChannel(IS_DEBUGGING) 
+
+    already_existed = DataFileExists()
+
+    #test (delte later)
+    song = _getRandomSong()
+    msg, notes = songMessage(song)
+    print(msg, "\n" + notes)
+
+
+
 
     #prints
     print(f"{Bot.user} has connected to Discord, into '{CHANNEL}' channel!")
     await CHANNEL.send(TRIGGER_SETUP_MSG)
     print(TRIGGER_SETUP_MSG)
 
+    if not already_existed:
+        msg = "ERROR: database is empty, please fill..."
+        await CHANNEL.send(msg)
+        print(msg)
+
     #loop functions
     await trigger.start()
+
+
 
     
 
     
 if __name__ == "__main__":
     load_dotenv()  #enable os.getenv() to actually get 'environment variables' from .env file
-
-    already_existed = DataFileExists()
-    '''
-    if not already_existed:
-        default_song = ("To Hell with the Devil", 
-                        "https://www.youtube.com/watch?v=sG0zAn0dL2I", 
-                        10, 
-                        "Containing 4 minutes of legenedary epicness, it will get you **pumped**!")
-        addSong(*default_song)
-    '''
-
-    #print("loading", loadSongs())
-
-    song = _getRandomSong()
-    msg, notes = songMessage(song)
-    print(msg, "\n" + notes)
-
 
     try:
         Bot.run(getBotToken())
