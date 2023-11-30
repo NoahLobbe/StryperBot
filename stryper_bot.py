@@ -157,7 +157,7 @@ def validateRating(rating_str):
     try:
         rating = float(rating_str)
         if (rating).is_integer():
-            rating = int(rating) #makes the text output later nicer :D
+            rating = int(rating) #makes the text output nicer later :D
         return (rating >= 0 and rating <= 10)
     except ValueError as e:
         print(e)
