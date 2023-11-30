@@ -245,12 +245,12 @@ def songMessage(song:dict):
 
 
 
-def doesSongExist(songs_list:list, song:dict):
+def doesSongExist(songs_list:list, song_url:str):
     """Returns (bool, int). 
     Bool for the existence of song in database, and int of index of existing song.
     If song doesn't exist, then index is 0"""
     for i, s in songs_list:
-        if (song["url"] == s["url"]):
+        if (song_url == s["url"]):
             print("already exists!")
             return True, i
     return False, 0
@@ -274,19 +274,19 @@ def addSong(title, url, rating, notes):
     else:
         return False
     
-def updateSong(song:dict):
+def updateSong(song_url, new_rating, new_notes):
     """Updates song rating and notes in database if it exists. Returns bool of success/failure"""    
     current_data_file = getDataFile()
     current_songs_list = current_data_file["songs"]
 
-    song_already_exists, index_of_song = doesSongExist(current_songs_list, song)
+    song_already_exists, index_of_song = doesSongExist(current_songs_list, song_url)
 
     if song_already_exists:
-        rating_is_legit = validateRating(song["rating"])
+        rating_is_legit = validateRating(new_rating)
         if rating_is_legit:
             #update song entry    
-            current_songs_list[index_of_song]["rating"] = song["rating"]
-            current_songs_list[index_of_song]["notes"] = song["notes"]
+            current_songs_list[index_of_song]["rating"] = new_rating
+            current_songs_list[index_of_song]["notes"] = new_notes
 
             with open(DATA_FILE, "w") as write_file:
                 json.dump(current_data_file, write_file, indent=JSON_INDENTS)
@@ -422,7 +422,15 @@ async def add(context, youtube_url, rating, *raw_notes):
             print(msg)
             await context.send(msg)
 
-    
+@Bot.command()
+async def update(context, song_url, new_rating, *new_notes):
+    """Updates database provided the song_url is in the database"""
+    is_member_privileged = await isMemberPrivileged(context) 
+    if is_member_privileged:
+        url_is_legit, _ = validateYoutubeURL(song_url)
+        if url_is_legit:
+            await updateSong(song_url, new_rating, new_notes)
+            print(f"Updated song...{song_url}, {new_rating}, {new_notes}")
         
 
 @Bot.event
