@@ -32,8 +32,8 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=16, minute=21, tzinfo=TIMEZONE) 
-TRIGGER_DAY_STR = "Thursday" #"Saturday"
+TRIGGER_TIME = datetime.time(hour=9, minute=50, tzinfo=TIMEZONE) 
+TRIGGER_DAY_STR = "Saturday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
 
@@ -134,17 +134,8 @@ def isYoutube(url:str):
                 is_youtube = True
     #get title
     title = html.find("meta", attrs={"name":"title"}).attrs["content"]
+    print( is_youtube, title)
     return is_youtube, title
-
-
-def validateYoutubeURL(url):
-    """Returns bool as to whether 'url' <str> is legit 
-    and if it is actually a youtube video link"""
-    is_valid_url = bool(validators.url(url))
-    if is_valid_url:
-        return isYoutube(url)       
-    else:
-        return False, ""
     
 
 def cleanYoutubeURL(url):
@@ -164,6 +155,19 @@ def cleanYoutubeURL(url):
         yt_url = yt_url[:-1]
 
     return yt_url
+
+
+def validateYoutubeURL(url):
+    """Returns bool as to whether 'url' <str> is legit 
+    and if it is actually a youtube video link"""
+    clean_url = cleanYoutubeURL(url)
+    is_valid_url = bool(validators.url(clean_url))
+    if is_valid_url:
+        print(f"valid URL is cleaned to: {clean_url}")
+        is_youtube, yt_title = isYoutube(clean_url)
+        return is_youtube, yt_title, clean_url       
+    else:
+        return False, "", clean_url
 
 
 def validateRating(rating_str):
@@ -262,13 +266,13 @@ def songMessage(song:dict):
 
 
 
-def doesSongExist(songs_list:list, song:dict):
+def doesSongExist(songs_list:list, song_url:str):
     """Returns (bool, int). 
     Bool for the existence of song in database, and int of index of existing song.
     If song doesn't exist, then index is 0"""
-    print(f"in doesSongExist(), song_url: {song} ")
+    print(f"in doesSongExist(), song_url: {song_url} ")
     for i, s in enumerate(songs_list):
-        if (song["url"] == s["url"]):
+        if (song_url == s["url"]):
             print("exists!")
             return True, i
     return False, 0
@@ -282,7 +286,7 @@ def addSong(title, url, rating, notes):
     current_data_file = getDataFile()
     current_songs_list = current_data_file["songs"]
 
-    song_already_exists, index_of_song = doesSongExist(current_songs_list, new_song)
+    song_already_exists, index_of_song = doesSongExist(current_songs_list, new_song["url"])
     if not song_already_exists:
         #add song to database
         with open(DATA_FILE, "w") as write_file:
@@ -371,14 +375,14 @@ async def trigger(channel):
     """'Triggers' everyday at a certain time, but only properly triggers if today is the correct day"""
     day = datetime.datetime.now().weekday()
     if day == TRIGGER_DAY_NUM:
-        msg = "Triggering..."
         await _random(channel)
+        print("Triggered")
     else:
         day_str = getKey(DAYS_LEGEND, day) 
         msg = f"Wrong day to trigger as today is {day_str} not {TRIGGER_DAY_STR} \n:("
 
-    await CHANNEL.send(msg)
-    print(msg)
+        await CHANNEL.send(msg)
+        print(msg)
 
 
 
@@ -401,7 +405,7 @@ async def random(context):
 
 @Bot.command()
 async def add(context, youtube_url, rating, *raw_notes):
-    """Adds song to database. 'rating' needs to be a positive float from 0 to 10,
+    """Adds song to database. 'rating' needs to be a positive float (decimal) from 0 to 10,
     and 'raw_notes' is just in case some adds song notes without quotes, as discord.py
     seems to split arguements by spaces."""
 
@@ -411,8 +415,8 @@ async def add(context, youtube_url, rating, *raw_notes):
         print(f"User inputted: '{youtube_url}', '{rating}', and '{raw_notes}'")
 
         #validate user input
-        clean_yt_url = cleanYoutubeURL(youtube_url)
-        url_is_legit, yt_title = validateYoutubeURL(clean_yt_url)
+        # moved cleaning the URL into validateYoutubeURL: clean_yt_url = cleanYoutubeURL(youtube_url)
+        url_is_legit, yt_title, clean_yt_url = validateYoutubeURL(youtube_url)
         rating_is_legit = validateRating(rating)
         
         #output stuff
@@ -422,7 +426,7 @@ async def add(context, youtube_url, rating, *raw_notes):
 
         else:    
             url_invalid_str = f"'{clean_yt_url}' is not reachable"
-            rating_invalid_str = f"'{rating}' is invalid, has to be a positive float from 0 to 10"
+            rating_invalid_str = f"'{rating}' is invalid, has to be a positive decimal from 0 to 10"
 
             if url_is_legit and not rating_is_legit:
                 msg = rating_invalid_str
@@ -443,18 +447,20 @@ async def update(context, song_url, new_rating, *new_notes):
     is_member_privileged = await isMemberPrivileged(context) 
 
     if is_member_privileged:
-        url_is_legit, _ = validateYoutubeURL(song_url)
+        url_is_legit, _, clean_url = validateYoutubeURL(song_url)
 
         if url_is_legit:
-            is_successful, status_msg = updateSong(song_url, new_rating, new_notes)
+            is_successful, status_msg = updateSong(clean_url, new_rating, new_notes)
 
             if is_successful:
                 msg = status_msg
             else:
                 msg = f"ERROR: {status_msg}"  
 
-        else:         
-            msg = f"ERROR: invalid url passed, '{song_url}'"
+        else:
+            is_url_suppressed = ('<' in song_url) and ('>' in song_url)
+            url = (is_url_suppressed * '<') + song_url + (is_url_suppressed * '>')
+            msg = f"ERROR: invalid url passed, '{url}'"
 
         await context.send(msg)
         print(msg) 

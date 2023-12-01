@@ -21,7 +21,19 @@
             "title": "No Rest For The Wicked",
             "url": "https://www.youtube.com/watch?v=ev2HCjTLpLU",
             "rating": "7.5",
-            "notes": "Real banger"
+            "notes": []
+        },
+        {
+            "title": "Free",
+            "url": "https://www.youtube.com/watch?v=GvIS9029wzw",
+            "rating": "5",
+            "notes": ""
+        },
+        {
+            "title": "The Way, The Truth, The Life",
+            "url": "https://www.youtube.com/watch?v=71vxwUu_KL0",
+            "rating": "2",
+            "notes": []
         }
     ],
     "templates": [
