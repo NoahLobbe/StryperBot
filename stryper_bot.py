@@ -162,7 +162,7 @@ def cleanYoutubeURL(url):
 
     if yt_url[-1] == '>':
         yt_url = yt_url[:-1]
-            
+
     return yt_url
 
 
@@ -324,7 +324,6 @@ def _getRandomSong():
     "Returns a song <dict>"
     songs_list = getSongs()
     song_dict = rand.choice(songs_list)
-    #print(f"Random song: {song_dict}")
     return song_dict
 
 
@@ -333,9 +332,7 @@ def _getRandomSong():
 async def isMemberPrivileged(context):
     """Returns bool"""
     ctx_message = context.message
-    res =  ctx_message.author.name in PRIVILEGED_MEMBERS
-    print(ctx_message.author.name, type(ctx_message.author.name), res, PRIVILEGED_MEMBERS)
-    return res
+    return ctx_message.author.name in PRIVILEGED_MEMBERS
 
 
 async def postSong(context, song:dict):
@@ -344,6 +341,10 @@ async def postSong(context, song:dict):
     await context.send(msg)
     if note != "": await CHANNEL.send(note)
 
+
+async def _random(context):
+    song = _getRandomSong()
+    await postSong(context, song)
     
 
 
@@ -366,11 +367,12 @@ async def _addSong(context, title, url, rating, raw_notes):
 
 
 @discord.ext.tasks.loop(time=TRIGGER_TIME)
-async def trigger():
+async def trigger(channel):
     """'Triggers' everyday at a certain time, but only properly triggers if today is the correct day"""
     day = datetime.datetime.now().weekday()
     if day == TRIGGER_DAY_NUM:
         msg = "Triggering..."
+        await _random(channel)
     else:
         day_str = getKey(DAYS_LEGEND, day) 
         msg = f"Wrong day to trigger as today is {day_str} not {TRIGGER_DAY_STR} \n:("
@@ -383,19 +385,10 @@ async def trigger():
 ### 'slash' commands (prefix defined in Bot constructor)
 @Bot.command()
 async def alive(context):
-    """Simple test slash command to determine if Bot is operating. Anybody can run this."""
+    """Simple test slash command to determine if Bot is operating. Anybody can call this."""
     msg = f"*I AM ALIVE!!!*"
     await context.send(msg)
     print(msg)
-    print(context.message)
-
-"""
-@Bot.command()
-async def greet(context):   
-    is_member_privileged = await isMemberPrivileged(context) 
-    if is_member_privileged:
-        await context.send("Why hello there!")
-"""
 
 
 @Bot.command()
@@ -403,13 +396,12 @@ async def random(context):
     """Posts a random song from database, provided the member to call random has the privilege"""
     is_member_privileged = await isMemberPrivileged(context) 
     if is_member_privileged:
-        song = _getRandomSong()
-        await postSong(context, song)
+        await _random(context)
 
 
 @Bot.command()
 async def add(context, youtube_url, rating, *raw_notes):
-    """Adds song to database. 'rating' needs to be a positive integer from 0 to 10,
+    """Adds song to database. 'rating' needs to be a positive float from 0 to 10,
     and 'raw_notes' is just in case some adds song notes without quotes, as discord.py
     seems to split arguements by spaces."""
 
@@ -444,6 +436,7 @@ async def add(context, youtube_url, rating, *raw_notes):
             print(msg)
             await context.send(msg)
 
+
 @Bot.command()
 async def update(context, song_url, new_rating, *new_notes):
     """Updates database provided the song_url is in the database"""
@@ -466,6 +459,7 @@ async def update(context, song_url, new_rating, *new_notes):
         await context.send(msg)
         print(msg) 
 
+
 @Bot.event
 async def on_ready():
     """Runs when Bot is ready, kind of like a class constructor/init/"""
@@ -476,9 +470,6 @@ async def on_ready():
     loadPrivilegedMembers()
 
     already_existed = DataFileExists()
-
-
-
 
 
     #prints
@@ -492,7 +483,7 @@ async def on_ready():
         print(msg)
 
     #loop functions
-    await trigger.start()
+    await trigger.start(CHANNEL)
 
 
 
