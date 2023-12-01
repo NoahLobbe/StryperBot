@@ -5,6 +5,12 @@ A Discord bot made to automate Stryper Saturdays. Stryper Saturdays are when a S
 
 This code should be pretty easy to customise too, so it doesn't *have* to be a Stryper Saturdays bot :D
 
+## To Do
+- `.remove`: remove song from database.
+- `.template`: add a template to database.
+- Finish triggering.
+
+
 ## Dependencies
 Listed in [`requirements.txt`](requirements.txt)
 
