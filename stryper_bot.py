@@ -162,7 +162,7 @@ def cleanYoutubeURL(url):
 
     if yt_url[-1] == '>':
         yt_url = yt_url[:-1]
-        
+            
     return yt_url
 
 
