@@ -150,7 +150,20 @@ def validateYoutubeURL(url):
 def cleanYoutubeURL(url):
     """Gets rid of extra unneccessary data in URL"""
     cut_off_index = url.find("&") #first one found is returned, which is the start of extra needless data in url
-    return url[:cut_off_index]
+
+    if cut_off_index != -1: 
+        yt_url = url[:cut_off_index]
+    else:
+        yt_url = url
+    
+    #If people want to suppress preview of a link, eg. <link string>, the angle brackets need to be removed
+    if yt_url[0] == '<':
+        yt_url = yt_url[1:]
+
+    if yt_url[-1] == '>':
+        yt_url = yt_url[:-1]
+        
+    return yt_url
 
 
 def validateRating(rating_str):
@@ -201,13 +214,15 @@ def randomTemplate():
 
 def _insertSongToTemplate(template:str, song:dict):
     """Returns a str which has made o"""
-    new_string = template
+
     replacements = [
         ("{title}", song["title"]),
         ("{url}",song["url"]),
         ("{rating}", str(song['rating'])), #has to be a str for .replace(...)
         ("{notes}", song["notes"])
     ]
+
+    new_string = template
     for replacement in replacements:
         new_string = new_string.replace(replacement[0], replacement[1])
     return new_string
@@ -235,6 +250,8 @@ def songMessage(song:dict):
     notes = song["notes"]
     return (intro + description + link), notes
     '''
+    if type(song["notes"]) != str:
+        song["notes"] = " ".join(song["notes"]) #concatenate, otherwise a list of the notes will be inserted into template
 
     template = randomTemplate()
     body = _insertSongToTemplate(template, song)
@@ -245,12 +262,13 @@ def songMessage(song:dict):
 
 
 
-def doesSongExist(songs_list:list, song_url:str):
+def doesSongExist(songs_list:list, song:dict):
     """Returns (bool, int). 
     Bool for the existence of song in database, and int of index of existing song.
     If song doesn't exist, then index is 0"""
+    print(f"in doesSongExist(), song_url: {song} ")
     for i, s in enumerate(songs_list):
-        if (song_url == s["url"]):
+        if (song["url"] == s["url"]):
             print("exists!")
             return True, i
     return False, 0
@@ -259,6 +277,7 @@ def doesSongExist(songs_list:list, song_url:str):
 def addSong(title, url, rating, notes):
     """Returns True if successful in adding the song to database or overwriting if"""
     new_song = {"title":title, "url":url, "rating":rating, "notes":notes}
+    print(f"in addSong(), url: {new_song['url']}")
 
     current_data_file = getDataFile()
     current_songs_list = current_data_file["songs"]
@@ -325,15 +344,16 @@ async def postSong(context, song:dict):
     await context.send(msg)
     if note != "": await CHANNEL.send(note)
 
+    
 
-async def _addSong(context, yt_title, youtube_url, rating, raw_notes):
-    #prep and add song to songs file
-        clean_yt_url = cleanYoutubeURL(youtube_url)
+
+async def _addSong(context, title, url, rating, raw_notes):
+    #prep and add song to songs file        
         notes = ""
         if len(raw_notes) > 2:
             notes = " ".join(raw_notes[2:])
             
-        is_success = addSong(yt_title, clean_yt_url, rating, notes)
+        is_success = addSong(title, url, rating, notes)
         if is_success:
             await postSong(context, getSong(-1))
             print("...successful")
@@ -399,16 +419,17 @@ async def add(context, youtube_url, rating, *raw_notes):
         print(f"User inputted: '{youtube_url}', '{rating}', and '{raw_notes}'")
 
         #validate user input
-        url_is_legit, yt_title = validateYoutubeURL(youtube_url)
+        clean_yt_url = cleanYoutubeURL(youtube_url)
+        url_is_legit, yt_title = validateYoutubeURL(clean_yt_url)
         rating_is_legit = validateRating(rating)
         
         #output stuff
         if url_is_legit and rating_is_legit:
-            await _addSong(context, yt_title, youtube_url, rating, raw_notes)
-            await context.send("Added!")
+            await _addSong(context, yt_title, clean_yt_url, rating, raw_notes)
+            await context.send("\nAdded!")
 
         else:    
-            url_invalid_str = f"'{youtube_url}' is not reachable"
+            url_invalid_str = f"'{clean_yt_url}' is not reachable"
             rating_invalid_str = f"'{rating}' is invalid, has to be a positive float from 0 to 10"
 
             if url_is_legit and not rating_is_legit:
@@ -456,10 +477,6 @@ async def on_ready():
 
     already_existed = DataFileExists()
 
-    #test (delte later)
-    song = _getRandomSong()
-    msg, notes = songMessage(song)
-    print(msg, "\n" + notes)
 
 
 

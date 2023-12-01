@@ -32,7 +32,7 @@ It is recommended that a 'superuser'/'debug' server/guild or text channel is all
 
 
 ### Secrects
-Without knowing an business/industry methods for storing secrets, the secrets should be stored in the environment/system variables of the machine the Bot is running on. However, if the Bot is being run off an external server, then a file accessible by the Bot is the 'best' next way. Currently, a `.env` file is being used for secrets, using `python-dotenv` library to make `os.getenv("token string")` read from a `.env`, easily.
+Without knowing an business/industry methods for storing secrets, the secrets should be stored in the environment/system variables of the machine the Bot is running on. However, if the Bot is being run off an external server, then a file accessible by the Bot is the 'best' next way. Currently, a `.env` file is being used for secrets, using `python-dotenv` library to make `os.getenv("token string")` read from a `.env` file, easily.
 
 Secrets:
 - `STRYPER_BOT_TOKEN` (obviously)
@@ -47,9 +47,9 @@ Secrets:
 
 Commands (slash prefix included):
 - `.alive`: basically a command (available to **everyone**) to check if it is running, by replying with a message... :D
-- `.add`: adds a song to database. Has parameters `youtube_url` (`str`), `rating` (`float`, from 0 to 10), and `notes` (`str`) which can be contain in quotes or not (program currently doesn't care) and is just any additional thoughts on that song. 
+- `.add`: adds a song to database. Has parameters `youtube_url` (`str`), `rating` (`float`, from 0 to 10), and `notes` (`str`) which can be contain in quotes or not (script catches it). 
+Additionally, suppression of links are also caught, e.g. `<url passed>`.
     Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
+    ***NEED TO CATCH LEGITIMATE NONE YOUTUBE LINKS***
 - `.update`: updates a song in the database. Has the same parameters as `.add`. Overwrites the `rating` and `notes` of existing song in database.
 - ***...more to come...***
-
-Slash command prefix is `.`, therefore, to use `alive` command, post `.alive` in discord channel
