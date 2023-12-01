@@ -49,7 +49,7 @@ Commands (slash prefix included):
 - `.alive`: basically a command (available to **everyone**) to check if it is running, by replying with a message... :D
 - `.add`: adds a song to database. Has parameters `youtube_url` (`str`), `rating` (`float`, from 0 to 10), and `notes` (`str`) which can be contain in quotes or not (script catches it). 
 Additionally, suppression of links are also caught, e.g. `<url passed>`.
-    Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
+    - Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
     ***NEED TO CATCH LEGITIMATE NONE YOUTUBE LINKS***
 - `.update`: updates a song in the database. Has the same parameters as `.add`. Overwrites the `rating` and `notes` of existing song in database.
 - ***...more to come...***
