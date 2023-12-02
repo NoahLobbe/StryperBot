@@ -244,6 +244,15 @@ def _isValidTemplate(raw_template):
     return (has_title and has_rating and has_url), (has_title, has_rating, has_url)
 
 
+def _doesTemplateExist(templates_list, template):
+    """Returns (bool, int). True if already exists, int of index if it exists, 0 otherwise."""
+    for i, t in enumerate(templates_list):
+        if (t == template):
+            print("exists!")
+            return True, i
+    return False, 0
+
+
 
 
 ### songs helper functions
@@ -486,7 +495,14 @@ async def add_template(Context, *raw_new_template_parts):
         is_valid, code_bools = _isValidTemplate(new_template)
 
         if is_valid:
-            pass # check for existing templates
+            templates_list = _getTemplates()
+            template_already_exists, index = _doesTemplateExist(templates_list, new_template)
+            if template_already_exists:
+                msg = "Template already exists!"
+                await Context.send(msg)
+                print(msg)
+            else:
+                pass #add template to database
         else:
             msg = f"ERROR in '{new_template}':"
             #determine error message based on `code_bools`
