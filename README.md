@@ -17,10 +17,10 @@ It is recommended that a 'superuser'/'debug' server/guild or text channel is all
 ***As for the instructions for adding the Bot to a server...I will get around to it :D***
 
 
-### Secrects
-Without knowing an business/industry methods for storing secrets, the secrets should be stored in the environment/system variables of the machine the Bot is running on. However, if the Bot is being run off an external server, then a file accessible by the Bot is the 'best' next way. Currently, a `.env` file is being used for secrets, using `python-dotenv` library to make `os.getenv("token string")` read from a `.env` file, easily.
+### Secrets
+Without knowing a business/industry method for storing secrets, the secrets are stored in the environment/system variables of the machine the Bot is running on. However, if the Bot is being run off an external server, then a file accessible by the Bot is the 'best' next way. Currently, a `.env` file is being used for secrets, using `python-dotenv` library to make `os.getenv("token string")` read from a `.env` file, easily.
 
-Secrets:
+#### Secrets:
 - `STRYPER_BOT_TOKEN` (obviously)
 - `DEBUG_CHANNEL_ID` is the separate debug channel
 - `DEPLOYED_CHANNEL_ID` is the channel to be active in
@@ -32,7 +32,7 @@ Secrets:
 ## 'Slash' Commands
 'Slash' commands can only be run by those in `PRIVILEGED_MEMBERS`, type is `set`, (which also contains `AUTHOR_NAME` for ease of use). Currently, it does not matter what channel the privileged member is to use any 'slash' command, it will respond in the same channel.
 
-Commands (slash prefix included):
+#### Commands (slash prefix included):
 - `.alive`: basically a command (available to **everyone**) to check if it is running, by replying with a message... :D
 - `.add`: adds a song to database. Has parameters `youtube_url` (`str`), `rating` (`float`, from 0 to 10), and `notes` (`str`) which can be contain in quotes or not (script catches it). 
 Additionally, suppression of links are also caught, e.g. `<url passed>`.
