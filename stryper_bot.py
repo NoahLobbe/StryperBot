@@ -252,6 +252,23 @@ def _doesTemplateExist(templates_list, template):
             return True, i
     return False, 0
 
+def _addTemplate(new_template):
+    """Returns bool. True if successful, False otherwise"""
+    
+    current_data_file = _getData()
+    current_templates_list = current_data_file["templates"]
+
+    template_already_exists, index = _doesTemplateExist(current_templates_list, new_template)
+    if not template_already_exists:
+        
+        current_data_file["templates"].append(new_template)
+
+        with open(DATA_FILE, "w") as write_file:    
+            json.dump(current_data_file, write_file, indent=JSON_INDENTS)
+        
+        return True
+    return False
+
 
 
 
@@ -316,7 +333,7 @@ def _addSong(title, url, rating, notes):
         return False
     
 def _updateSong(song_url, new_rating, new_notes):
-    """Updates song rating and notes in database if it exists. Returns bool of success/failure"""    
+    """Updates song rating and notes in database if it exists. Returns bool of success/failure, messsage str"""    
     current_data_file = _getData()
     current_songs_list = current_data_file["songs"]
 
@@ -337,13 +354,13 @@ def _updateSong(song_url, new_rating, new_notes):
 
 
 def _getSong(index):
-    """Returns a song <dict> of the given index in database"""
+    """Returns a song dict of the given index in database"""
     songs_list = __getSongs()
     return songs_list[index]
 
 
 def _getRandomSong():
-    "Returns a song <dict>"
+    "Returns a song dict"
     songs_list = __getSongs()
     song_dict = rand.choice(songs_list)
     return song_dict
@@ -495,14 +512,15 @@ async def add_template(Context, *raw_new_template_parts):
         is_valid, code_bools = _isValidTemplate(new_template)
 
         if is_valid:
-            templates_list = _getTemplates()
-            template_already_exists, index = _doesTemplateExist(templates_list, new_template)
-            if template_already_exists:
-                msg = "Template already exists!"
-                await Context.send(msg)
-                print(msg)
+            is_successful = _addTemplate(new_template)
+            if is_successful:
+                msg = "Success"
             else:
-                pass #add template to database
+                msg = "Template already exists!"
+            await Context.send(msg)
+            print(msg)
+            
+                
         else:
             msg = f"ERROR in '{new_template}':"
             #determine error message based on `code_bools`

@@ -79,7 +79,6 @@ These files are probably not very easy to read, but were helpful in testing stuf
 
 ## To Do
 - `.remove`: remove song from database.
-- `.template`: add a template to database.
 - Finish triggering.
 - Catch legitimate non-youtube links when validating
 - add a slash command to print song and template entries from database
