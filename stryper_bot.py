@@ -241,7 +241,7 @@ def _isValidTemplate(raw_template):
     has_rating = "{rating}" in raw_template
     has_url = "{url}" in raw_template
 
-    return has_title and has_rating and has_url
+    return (has_title and has_rating and has_url), (has_title, has_rating, has_url)
 
 
 
@@ -356,19 +356,22 @@ async def postSong(Context, song):
 
 
 async def addSong(Context, title, url, rating, raw_notes):
+    """Returns bool of success/failure"""
     #prep and add song to songs file        
-        notes = ""
-        if len(raw_notes) > 2:
-            notes = " ".join(raw_notes[2:])
-            
-        is_success = _addSong(title, url, rating, notes)
-        if is_success:
-            await postSong(Context, _getSong(-1))
-            print("...successful")
-        else:
-            error_msg = "Already added! Update entry using .update command"
-            await Context.send(error_msg)
-            print(error_msg)
+    notes = ""
+    if len(raw_notes) > 2:
+        notes = " ".join(raw_notes[2:])
+        
+    is_success = _addSong(title, url, rating, notes)
+    if is_success:
+        await postSong(Context, _getSong(-1))
+        print("...successful")
+        return True
+    else:
+        error_msg = "Already added! Update entry using .update command"
+        await Context.send(error_msg)
+        print(error_msg)
+        return False
 
 
 
@@ -406,6 +409,7 @@ async def random(Context):
     if is_member_privileged:
         song = _getRandomSong()
         await postSong(Context, song)
+        print(f"Random song is: {song}")
 
 
 @Bot.command()
@@ -426,8 +430,9 @@ async def add(Context, youtube_url, rating, *raw_notes):
         
         #output stuff
         if url_is_legit and rating_is_legit:
-            await addSong(Context, yt_title, clean_yt_url, rating, raw_notes)
-            await Context.send("\nAdded!")
+            is_successful = await addSong(Context, yt_title, clean_yt_url, rating, raw_notes)
+            if is_successful:
+                await Context.send("\nAdded!")
 
         else:    
             url_invalid_str = f"'{clean_yt_url}' is not reachable"
@@ -472,16 +477,18 @@ async def update(Context, song_url, new_rating, *new_notes):
 
 
 @Bot.command()
-async def add_template(Context, new_template:str):
+async def add_template(Context, *raw_new_template_parts):
     """Add a template string to database"""
     is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
+        #print(raw_new_template_parts)
+        new_template = " ".join(raw_new_template_parts)
         is_valid, code_bools = _isValidTemplate(new_template)
 
         if is_valid:
-            pass
+            pass # check for existing templates
         else:
-            msg = "ERROR: "
+            msg = f"ERROR in '{new_template}':"
             #determine error message based on `code_bools`
             if not code_bools[0]:
                 msg += "\n\tRequires title code '{title}'"
@@ -500,7 +507,7 @@ async def remove_template(Context):
     """Remove a template string from database"""
     is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
-        pass
+        pass #really not sure how to implement this
 
 
 @Bot.event
@@ -535,8 +542,6 @@ async def on_ready():
     
 if __name__ == "__main__":
     load_dotenv()  #enable os.getenv() to actually get 'environment variables' from .env file
-
-    print(type(_getTemplates()))
 
     try:
         Bot.run(_getBotToken())

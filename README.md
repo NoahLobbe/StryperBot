@@ -38,6 +38,9 @@ Without knowing a business/industry method for storing secrets, the secrets are 
 Additionally, suppression of links are also caught, e.g. `<url passed>`.
     - Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
 - `.update`: updates a song in the database. Has the same parameters as `.add`. Overwrites the `rating` and `notes` of existing song in database.
+- ...
+- `.add_template`: adds the text after the command as a template for a Stryper Saturday post. **Must** contain template codes (see Data Structure section). Text can be inside quotes or not.
+    - Example (Discord channel): `.add_template Greetings fans! \nToday's Stryper Saturday is the song {title}, with a rating of {rating}: {url}`
 
 
 
@@ -61,7 +64,7 @@ As of 2nd December 2023, all functions that are not Bot functions, now start wit
     - `song`: is a `dict` consisting of the keys `title`, `url`, `rating`, and `notes`. `rating` is an `float` (from 0 to 10) while the rest are `str`'s. When adding a song to the database, `notes` is optional. `url` is the property used to determine if a song exists already in the database or not.
 
 - `templates`: contains a `list` of `str`'s which represent a `template`
-    - `template`: a `str` containing codes that are reserved for replacement with `song` information:
+    - `template`: a `str` containing codes that are reserved for replacement with `song` information. Codes:
         - `{title}` is replaced with song title
         - `{rating}` with song rating
         - `{url}` with song url
