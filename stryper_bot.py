@@ -232,7 +232,12 @@ def _insertSongToTemplate(template:str, song:dict):
     return new_string
 
         
+def isValidTemplate(raw_template:str):
+    has_title = "{title}" in raw_template
+    has_rating = "{rating}" in raw_template
+    has_url = "{url}" in raw_template
 
+    return has_title and has_rating and has_url
 
 
 
@@ -464,6 +469,38 @@ async def update(context, song_url, new_rating, *new_notes):
 
         await context.send(msg)
         print(msg) 
+
+
+@Bot.command()
+async def add_template(context, new_template:str):
+    """Add a template string to database"""
+    is_member_privileged = await isMemberPrivileged(context) 
+    if is_member_privileged:
+        is_valid, code_bools = isValidTemplate(new_template)
+
+        if is_valid:
+            pass
+        else:
+            msg = "ERROR: "
+            #determine error message based on `code_bools`
+            if not code_bools[0]:
+                msg += "\n\tRequires title code '{title}'"
+            if not code_bools[1]:
+                msg += "\n\tRequires rating code '{rating}'"
+            if not code_bools[2]:
+                msg += "\n\tRequires url code '{url}'"
+            
+            await context.send(msg)
+            print(msg)
+
+
+
+@Bot.command()
+async def remove_template(context):
+    """Remove a template string from database"""
+    is_member_privileged = await isMemberPrivileged(context) 
+    if is_member_privileged:
+        pass
 
 
 @Bot.event
