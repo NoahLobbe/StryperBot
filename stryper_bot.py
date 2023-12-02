@@ -38,23 +38,24 @@ TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
 
 #bot setup
-botIntents = discord.Intents.default()
-botIntents.message_content = True 
-Bot = discord.ext.commands.Bot(command_prefix=".", intents=botIntents)
+BotIntents = discord.Intents.default()
+BotIntents.message_content = True 
+Bot = discord.ext.commands.Bot(command_prefix=".", intents=BotIntents)
 
 CHANNEL = None #the channel to post messages into
 PRIVILEGED_MEMBERS = set() #wanted something immutable
 AUTHOR = set()
 
 
-def getBotToken():
-    """Returns token <str>"""
+###Secrets helper functions
+def _getBotToken():
+    """Returns str"""
     BOT_TOKEN = os.getenv("STRYPER_BOT_TOKEN")
     assert BOT_TOKEN is not None
     return BOT_TOKEN
 
 
-def loadPrivilegedMembers():
+def _loadPrivilegedMembers():
     """Loads the usernames of discord members who have Bot privileges"""
     global PRIVILEGED_MEMBERS
     #general privileged
@@ -80,49 +81,33 @@ def loadPrivilegedMembers():
     #print(f"PRIVILEGED_MEMBERS (with author): {PRIVILEGED_MEMBERS}")
 
 
-async def getChannel(DEBUG=True):
-    """Returns a discord.py channel object to be used"""
-    if DEBUG:
+async def _getChannel(debug_mode=True):
+    """Returns a discord.py Channel object to be used"""
+    if debug_mode:
         channel_id_str = os.getenv('DEBUG_CHANNEL_ID')
     else:
         channel_id_str = os.getenv('DEPLOYED_CHANNEL_ID')
     channel_id = int(channel_id_str)
 
     channel = Bot.get_channel(channel_id)
-    #print(f"getChannel(): {channel_id}, {channel}")
+    #print(f"_getChannel(): {channel_id}, {channel}")
     return channel
 
     
 
-### Miscen... functions
-def getKey(Dict, value):
-    """Returns key from Dict <dict> for a given 'value'"""
+### Miscen... helper functions
+def _getDictKey(Dict, value):
+    """Returns key from the key:value pair in a dict"""
     for k, v in Dict.items(): 
         if v == value:
             return k
 
 
-### Setup functions
-def DataFileExists():
-    """Returns True if already existed, and False if file had to be made"""
-    if not os.path.exists(DATA_FILE):
-        print(f"Making '{DATA_FILE}'")
 
-        with open(DATA_FILE, "w+") as new_file:
-            data = {
-                "songs": [], 
-                "templates":[]
-                }
-            json.dump(data, new_file, indent=JSON_INDENTS)
-        return False
-    return True
-
-
-
-### Determines
-def isYoutube(url:str):
-    """Returns bool for whether 'url' <str> is a youtube video url,
-    and string of the youtube video's title if is legit."""
+### User input (parsing?) helper functions
+def _isYoutube(url):
+    """Returns bool and str. Bool for whether 'url' (str) is a youtube video url,
+    and str of the youtube video's title if it is legit."""
     is_youtube = False
     R = requests.get(url)
     html = BeautifulSoup(R.content, features="html.parser")
@@ -138,8 +123,8 @@ def isYoutube(url:str):
     return is_youtube, title
     
 
-def cleanYoutubeURL(url):
-    """Gets rid of extra unneccessary data in URL"""
+def _cleanYoutubeURL(url):
+    """Returns str. Gets rid of extra unneccessary data in url (str)"""
     cut_off_index = url.find("&") #first one found is returned, which is the start of extra needless data in url
 
     if cut_off_index != -1: 
@@ -157,20 +142,20 @@ def cleanYoutubeURL(url):
     return yt_url
 
 
-def validateYoutubeURL(url):
-    """Returns bool as to whether 'url' <str> is legit 
+def _validateYoutubeURL(url):
+    """Returns bool as to whether 'url' (str) is legit 
     and if it is actually a youtube video link"""
-    clean_url = cleanYoutubeURL(url)
+    clean_url = _cleanYoutubeURL(url)
     is_valid_url = bool(validators.url(clean_url))
     if is_valid_url:
         print(f"valid URL is cleaned to: {clean_url}")
-        is_youtube, yt_title = isYoutube(clean_url)
+        is_youtube, yt_title = _isYoutube(clean_url)
         return is_youtube, yt_title, clean_url       
     else:
         return False, "", clean_url
 
 
-def validateRating(rating_str):
+def _validateRating(rating_str):
     """Returns bool as to whether rating is valid"""
     try:
         rating = float(rating_str)
@@ -183,21 +168,38 @@ def validateRating(rating_str):
 
 
 
-### Data file functions
-def getDataFile():
+### Data file helper function(s)
+def _doesDataFileExist():
+    """Returns bool. True if already existed, and False if file had to be made"""
+    if not os.path.exists(DATA_FILE):
+        print(f"Making '{DATA_FILE}'")
+
+        with open(DATA_FILE, "w+") as new_file:
+            data = {
+                "songs": [], 
+                "templates":[]
+                }
+            json.dump(data, new_file, indent=JSON_INDENTS)
+        return False
+    return True
+
+
+def _getData():
     """Returns JSON object of whole file"""
     with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)
 
 
 
-### Templates functions
-def getTemplates():
+### Templates helper functions
+def _getTemplates():
+    """Returns a list of templates"""
     with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)["templates"]
     
-def writeTemplates(new_template:str):
-    current_database = getDataFile()
+def _writeTemplates(new_template):
+    """Writes templates to database"""
+    current_database = _getData()
     current_templates_list = current_database["templates"]
 
     with open(DATA_FILE, "w") as write_file:
@@ -206,17 +208,18 @@ def writeTemplates(new_template:str):
         json.dump(current_database, write_file, indent=JSON_INDENTS)
 
     
-def randomTemplate():
-    templates = getTemplates()
+def _randomTemplate():
+    """Returns str"""
+    templates = _getTemplates()
     if len(templates) > 0:
-        return rand.choice(getTemplates())
+        return rand.choice(_getTemplates())
     else:
         default = "***Hello everybody and WELCOME to Stryper Saturday!!!*** \nToday is the amazing song *{title}*, with a rating of {rating}/10: {url}" 
-        writeTemplates(default)
+        _writeTemplates(default)
         return default
 
 
-def _insertSongToTemplate(template:str, song:dict):
+def _insertSongToTemplate(template, song):
     """Returns a str which has made o"""
 
     replacements = [
@@ -232,7 +235,8 @@ def _insertSongToTemplate(template:str, song:dict):
     return new_string
 
         
-def isValidTemplate(raw_template:str):
+def _isValidTemplate(raw_template):
+    """Returns bool"""
     has_title = "{title}" in raw_template
     has_rating = "{rating}" in raw_template
     has_url = "{url}" in raw_template
@@ -242,14 +246,14 @@ def isValidTemplate(raw_template:str):
 
 
 
-### songs function
-def getSongs():
+### songs helper functions
+def __getSongs():
     """Returns list of songs"""
     with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)["songs"]
     
 
-def songMessage(song:dict):
+def _songMessage(song):
     """Returns two strings based on the 'song' <dict>, the first is the main bit, 
     and the second is the notes to be posted afterwards"""
     '''
@@ -262,7 +266,7 @@ def songMessage(song:dict):
     if type(song["notes"]) != str:
         song["notes"] = " ".join(song["notes"]) #concatenate, otherwise a list of the notes will be inserted into template
 
-    template = randomTemplate()
+    template = _randomTemplate()
     body = _insertSongToTemplate(template, song)
     notes = song["notes"]
 
@@ -271,11 +275,11 @@ def songMessage(song:dict):
 
 
 
-def doesSongExist(songs_list:list, song_url:str):
+def _doesSongExist(songs_list, song_url):
     """Returns (bool, int). 
     Bool for the existence of song in database, and int of index of existing song.
-    If song doesn't exist, then index is 0"""
-    print(f"in doesSongExist(), song_url: {song_url} ")
+    If song doesn't exist, then index is 0. Based on 'song_url' (str)"""
+    print(f"in _doesSongExist(), song_url: {song_url} ")
     for i, s in enumerate(songs_list):
         if (song_url == s["url"]):
             print("exists!")
@@ -283,15 +287,15 @@ def doesSongExist(songs_list:list, song_url:str):
     return False, 0
 
    
-def addSong(title, url, rating, notes):
-    """Returns True if successful in adding the song to database or overwriting if"""
+def _addSong(title, url, rating, notes):
+    """Returns True if successful in adding the song to database or overwriting if""" ##################################finish
     new_song = {"title":title, "url":url, "rating":rating, "notes":notes}
     print(f"in addSong(), url: {new_song['url']}")
 
-    current_data_file = getDataFile()
+    current_data_file = _getData()
     current_songs_list = current_data_file["songs"]
 
-    song_already_exists, index_of_song = doesSongExist(current_songs_list, new_song["url"])
+    song_already_exists, index_of_song = _doesSongExist(current_songs_list, new_song["url"])
     if not song_already_exists:
         #add song to database
         with open(DATA_FILE, "w") as write_file:
@@ -302,15 +306,15 @@ def addSong(title, url, rating, notes):
     else:
         return False
     
-def updateSong(song_url, new_rating, new_notes):
+def _updateSong(song_url, new_rating, new_notes):
     """Updates song rating and notes in database if it exists. Returns bool of success/failure"""    
-    current_data_file = getDataFile()
+    current_data_file = _getData()
     current_songs_list = current_data_file["songs"]
 
-    song_already_exists, index_of_song = doesSongExist(current_songs_list, song_url)
+    song_already_exists, index_of_song = _doesSongExist(current_songs_list, song_url)
 
     if song_already_exists:
-        rating_is_legit = validateRating(new_rating)
+        rating_is_legit = _validateRating(new_rating)
         if rating_is_legit:
             #update song entry    
             current_songs_list[index_of_song]["rating"] = new_rating
@@ -323,53 +327,47 @@ def updateSong(song_url, new_rating, new_notes):
     return False, "doesn't exist"
 
 
-def getSong(index):
+def _getSong(index):
     """Returns a song <dict> of the given index in database"""
-    songs_list = getSongs()
+    songs_list = __getSongs()
     return songs_list[index]
 
 
 def _getRandomSong():
     "Returns a song <dict>"
-    songs_list = getSongs()
+    songs_list = __getSongs()
     song_dict = rand.choice(songs_list)
     return song_dict
 
 
 
 ### Bot functions (not 'slash' commands)
-async def isMemberPrivileged(context):
+async def isMemberPrivileged(Context):
     """Returns bool"""
-    ctx_message = context.message
+    ctx_message = Context.message
     return ctx_message.author.name in PRIVILEGED_MEMBERS
 
 
-async def postSong(context, song:dict):
-    """Uses the 'song' <dict> to make prettier text to post to 'context'"""
-    msg, note = songMessage(song)
-    await context.send(msg)
+async def postSong(Context, song):
+    """Uses the 'song' (dict) to make prettier text to post to 'Context'"""
+    msg, note = _songMessage(song)
+    await Context.send(msg)
     if note != "": await CHANNEL.send(note)
 
 
-async def _random(context):
-    song = _getRandomSong()
-    await postSong(context, song)
-    
-
-
-async def _addSong(context, title, url, rating, raw_notes):
+async def addSong(Context, title, url, rating, raw_notes):
     #prep and add song to songs file        
         notes = ""
         if len(raw_notes) > 2:
             notes = " ".join(raw_notes[2:])
             
-        is_success = addSong(title, url, rating, notes)
+        is_success = _addSong(title, url, rating, notes)
         if is_success:
-            await postSong(context, getSong(-1))
+            await postSong(Context, _getSong(-1))
             print("...successful")
         else:
             error_msg = "Already added! Update entry using .update command"
-            await context.send(error_msg)
+            await Context.send(error_msg)
             print(error_msg)
 
 
@@ -380,10 +378,11 @@ async def trigger(channel):
     """'Triggers' everyday at a certain time, but only properly triggers if today is the correct day"""
     day = datetime.datetime.now().weekday()
     if day == TRIGGER_DAY_NUM:
-        await _random(channel)
+        song = _getRandomSong()
+        await postSong(channel, song)
         print("Triggered")
     else:
-        day_str = getKey(DAYS_LEGEND, day) 
+        day_str = _getDictKey(DAYS_LEGEND, day) 
         msg = f"Wrong day to trigger as today is {day_str} not {TRIGGER_DAY_STR} \n:("
 
         await CHANNEL.send(msg)
@@ -393,41 +392,42 @@ async def trigger(channel):
 
 ### 'slash' commands (prefix defined in Bot constructor)
 @Bot.command()
-async def alive(context):
+async def alive(Context):
     """Simple test slash command to determine if Bot is operating. Anybody can call this."""
     msg = f"*I AM ALIVE!!!*"
-    await context.send(msg)
+    await Context.send(msg)
     print(msg)
 
 
 @Bot.command()
-async def random(context):
+async def random(Context):
     """Posts a random song from database, provided the member to call random has the privilege"""
-    is_member_privileged = await isMemberPrivileged(context) 
+    is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
-        await _random(context)
+        song = _getRandomSong()
+        await postSong(Context, song)
 
 
 @Bot.command()
-async def add(context, youtube_url, rating, *raw_notes):
+async def add(Context, youtube_url, rating, *raw_notes):
     """Adds song to database. 'rating' needs to be a positive float (decimal) from 0 to 10,
     and 'raw_notes' is just in case some adds song notes without quotes, as discord.py
     seems to split arguements by spaces."""
 
-    is_member_privileged = await isMemberPrivileged(context) 
+    is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
 
         print(f"User inputted: '{youtube_url}', '{rating}', and '{raw_notes}'")
 
         #validate user input
-        # moved cleaning the URL into validateYoutubeURL: clean_yt_url = cleanYoutubeURL(youtube_url)
-        url_is_legit, yt_title, clean_yt_url = validateYoutubeURL(youtube_url)
-        rating_is_legit = validateRating(rating)
+        # moved cleaning the URL into _validateYoutubeURL: clean_yt_url = _cleanYoutubeURL(youtube_url)
+        url_is_legit, yt_title, clean_yt_url = _validateYoutubeURL(youtube_url)
+        rating_is_legit = _validateRating(rating)
         
         #output stuff
         if url_is_legit and rating_is_legit:
-            await _addSong(context, yt_title, clean_yt_url, rating, raw_notes)
-            await context.send("\nAdded!")
+            await addSong(Context, yt_title, clean_yt_url, rating, raw_notes)
+            await Context.send("\nAdded!")
 
         else:    
             url_invalid_str = f"'{clean_yt_url}' is not reachable"
@@ -443,19 +443,19 @@ async def add(context, youtube_url, rating, *raw_notes):
                 msg = url_invalid_str + ", and " + rating_invalid_str 
                 
             print(msg)
-            await context.send(msg)
+            await Context.send(msg)
 
 
 @Bot.command()
-async def update(context, song_url, new_rating, *new_notes):
+async def update(Context, song_url, new_rating, *new_notes):
     """Updates database provided the song_url is in the database"""
-    is_member_privileged = await isMemberPrivileged(context) 
+    is_member_privileged = await isMemberPrivileged(Context) 
 
     if is_member_privileged:
-        url_is_legit, _, clean_url = validateYoutubeURL(song_url)
+        url_is_legit, _, clean_url = _validateYoutubeURL(song_url)
 
         if url_is_legit:
-            is_successful, status_msg = updateSong(clean_url, new_rating, new_notes)
+            is_successful, status_msg = _updateSong(clean_url, new_rating, new_notes)
 
             if is_successful:
                 msg = status_msg
@@ -467,16 +467,16 @@ async def update(context, song_url, new_rating, *new_notes):
             url = (is_url_suppressed * '<') + song_url + (is_url_suppressed * '>')
             msg = f"ERROR: invalid url passed, '{url}'"
 
-        await context.send(msg)
+        await Context.send(msg)
         print(msg) 
 
 
 @Bot.command()
-async def add_template(context, new_template:str):
+async def add_template(Context, new_template:str):
     """Add a template string to database"""
-    is_member_privileged = await isMemberPrivileged(context) 
+    is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
-        is_valid, code_bools = isValidTemplate(new_template)
+        is_valid, code_bools = _isValidTemplate(new_template)
 
         if is_valid:
             pass
@@ -490,15 +490,15 @@ async def add_template(context, new_template:str):
             if not code_bools[2]:
                 msg += "\n\tRequires url code '{url}'"
             
-            await context.send(msg)
+            await Context.send(msg)
             print(msg)
 
 
 
 @Bot.command()
-async def remove_template(context):
+async def remove_template(Context):
     """Remove a template string from database"""
-    is_member_privileged = await isMemberPrivileged(context) 
+    is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
         pass
 
@@ -508,11 +508,11 @@ async def on_ready():
     """Runs when Bot is ready, kind of like a class constructor/init/"""
     #setup variables
     global CHANNEL
-    CHANNEL = await getChannel(IS_DEBUGGING) 
+    CHANNEL = await _getChannel(IS_DEBUGGING) 
 
-    loadPrivilegedMembers()
+    _loadPrivilegedMembers()
 
-    already_existed = DataFileExists()
+    already_existed = _doesDataFileExist()
 
 
     #prints
@@ -536,8 +536,10 @@ async def on_ready():
 if __name__ == "__main__":
     load_dotenv()  #enable os.getenv() to actually get 'environment variables' from .env file
 
+    print(type(_getTemplates()))
+
     try:
-        Bot.run(getBotToken())
+        Bot.run(_getBotToken())
 
     except aiohttp.client_exceptions.ClientConnectorError as e:
         print(f"...oops I caught a connection error running the bot: \n\t{e}")

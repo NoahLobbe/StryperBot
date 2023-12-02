@@ -10,6 +10,21 @@ This code should be pretty easy to customise too, so it doesn't *have* to be a S
 - `.template`: add a template to database.
 - Finish triggering.
 - Catch legitimate non-youtube links when validating
+- add a slash command to print song and template entries from database
+
+
+## Code Notes
+As of 2nd December 2023, all functions that are not Bot functions, now start with an underscore, `_`. E.g. 'Bot functions' mean any function that does has a discord/bot decorator and/or a `Context` parameter.
+
+Style guide:
+    - Variables are also in the `snake_case`
+    - Constant variables are in `SCREAMING_SNAKE_CASE`
+    - Slash commands are in the `snake_case` style
+    - Bot functions are `camelCase`
+    - Other 'helper' functions are in `_camelCase`, the underscore prefix notation to help indictate that they are helpers. Maybe there is a better method *shrug*; if so let me know!
+    - Class objects are in `PascalCase`
+    - `TIMEZONE`, `TRIGGER_TIME`, and `CHANNEL` are objects (from `datetime`) but I haven't figured out something better than `SCREAMING_SNAKE_CASE` as they are meant to be constant as well :D
+    - 
 
 
 ## Dependencies
