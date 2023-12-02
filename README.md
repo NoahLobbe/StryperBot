@@ -5,15 +5,12 @@ A Discord bot made to automate Stryper Saturdays. Stryper Saturdays are when a S
 
 This code should be pretty easy to customise too, so it doesn't *have* to be a Stryper Saturdays bot :D
 
-## To Do
-- `.remove`: remove song from database.
-- `.template`: add a template to database.
-- Finish triggering.
-- Catch legitimate non-youtube links when validating
-- add a slash command to print song and template entries from database
-
 
 ## Deployment
+### Dependencies
+Listed in [`requirements.txt`](requirements.txt)
+
+
 ### Adding Bot to server
 It is recommended that a 'superuser'/'debug' server/guild or text channel is allocated to the Bot. This is so that the main server channel doesn't get cluttered with commands to the Bot.
 ***As for the instructions for adding the Bot to a server...I will get around to it :D***
@@ -41,11 +38,8 @@ Additionally, suppression of links are also caught, e.g. `<url passed>`.
 - `.update`: updates a song in the database. Has the same parameters as `.add`. Overwrites the `rating` and `notes` of existing song in database.
 
 
-## Dependencies
-Listed in [`requirements.txt`](requirements.txt)
-
-
 ## Code Notes
+### General
 As of 2nd December 2023, all functions that are not Bot functions, now start with an underscore, `_`. E.g. 'Bot functions' mean any function that does has a discord/bot decorator and/or a `Context` parameter.
 
 ### Style guide:
@@ -73,3 +67,10 @@ These files are probably not very easy to read, but were helpful in testing stuf
         - `{url}` with song url
         - Song notes are always printed/posted after template, and thus don't have a code
     
+
+## To Do
+- `.remove`: remove song from database.
+- `.template`: add a template to database.
+- Finish triggering.
+- Catch legitimate non-youtube links when validating
+- add a slash command to print song and template entries from database
