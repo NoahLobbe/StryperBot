@@ -6,6 +6,7 @@ A Discord bot made to automate Stryper Saturdays. Stryper Saturdays are when a S
 This code should be pretty easy to customise too, so it doesn't *have* to be a Stryper Saturdays bot :D
 
 
+
 ## Deployment
 ### Dependencies
 Listed in [`requirements.txt`](requirements.txt)
@@ -27,6 +28,7 @@ Secrets:
 - `PRIVILEGED_MEMBER_NAMES` is the list of members who have the privilege to use 'slash' commands. Example: `PRIVILEGED_MEMBER_NAMES=username1,username2`
 
 
+
 ## 'Slash' Commands
 'Slash' commands can only be run by those in `PRIVILEGED_MEMBERS`, type is `set`, (which also contains `AUTHOR_NAME` for ease of use). Currently, it does not matter what channel the privileged member is to use any 'slash' command, it will respond in the same channel.
 
@@ -36,6 +38,7 @@ Commands (slash prefix included):
 Additionally, suppression of links are also caught, e.g. `<url passed>`.
     - Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
 - `.update`: updates a song in the database. Has the same parameters as `.add`. Overwrites the `rating` and `notes` of existing song in database.
+
 
 
 ## Code Notes
@@ -50,10 +53,7 @@ As of 2nd December 2023, all functions that are not Bot functions, now start wit
 - Other 'helper' functions are in `_camelCase`, the underscore prefix notation to help indictate that they are helpers. Maybe there is a better method *shrug*; if so let me know!
 - Class objects are in `PascalCase`
 - `TIMEZONE`, `TRIGGER_TIME`, and `CHANNEL` are objects (from `datetime`) but I haven't figured out something better than `SCREAMING_SNAKE_CASE` as they are meant to be constant as well :D
-- 
 
-### Testing Scripts
-These files are probably not very easy to read, but were helpful in testing stuff quickly without the whole circus.
 
 ### Data Strucutre
 `data.json` is the database file. The highest level entries (or keys) are currently `songs` and `templates`.
@@ -66,6 +66,12 @@ These files are probably not very easy to read, but were helpful in testing stuf
         - `{rating}` with song rating
         - `{url}` with song url
         - Song notes are always printed/posted after template, and thus don't have a code
+
+
+### Other
+#### Testing Scripts
+These files are probably not very easy to read, but were helpful in testing stuff quickly without the whole circus.
+
     
 
 ## To Do
