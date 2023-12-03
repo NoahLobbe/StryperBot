@@ -32,7 +32,7 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=9, minute=50, tzinfo=TIMEZONE) 
+TRIGGER_TIME = datetime.time(hour=19, minute=29, tzinfo=TIMEZONE) 
 TRIGGER_DAY_STR = "Saturday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
@@ -400,16 +400,58 @@ async def addSong(Context, title, url, rating, raw_notes):
         return False
 
 
+async def messageIsStryperDay(Context, Message):
+    """Returns bool"""
+    #does message mention Stryper Day?
+    is_mentioned = "Stryper Saturday" in Message.content
+
+    does_contain_link = False
+    if does_contain_link:
+        link_is_stryper = False
+
 
 
 @discord.ext.tasks.loop(time=TRIGGER_TIME)
 async def trigger(channel):
     """'Triggers' everyday at a certain time, but only properly triggers if today is the correct day"""
-    day = datetime.datetime.now().weekday()
-    if day == TRIGGER_DAY_NUM:
+    DateNow = datetime.datetime.now()
+    day_num = DateNow.weekday()
+    if day_num == TRIGGER_DAY_NUM:
         song = _getRandomSong()
         await postSong(channel, song)
         print("Triggered")
+
+        #"""
+        #get messages from today
+        year = DateNow.year
+        month = DateNow.month
+        day = DateNow.day
+        tzinfo = TIMEZONE
+        AfterDate = datetime.datetime(year=year, month=month, day=day, tzinfo=tzinfo)
+
+        print(f"AfterDate: {AfterDate}")
+
+        Msg_Iter = channel.history(after=AfterDate, oldest_first=False)
+
+        enacted_bit_map = []
+
+        for Msg in Msg_Iter:
+            #is SS enacted for Msg??
+            print(f"author: {Msg.author}  | content: {Msg.content}")
+
+        already_enacted = True in enacted_bit_map
+
+        if not already_enacted:
+            pass #enact
+        else:
+            pass #reply with a 'oo-rah!!!' kinda of message??? (REPLY @ ENACT-TOR)
+
+
+
+        print(f"AfterDate: {AfterDate}")
+
+        
+        #"""
     else:
         day_str = _getDictKey(DAYS_LEGEND, day) 
         msg = f"Wrong day to trigger as today is {day_str} not {TRIGGER_DAY_STR} \n:("
@@ -542,6 +584,36 @@ async def remove_template(Context):
     is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
         pass #really not sure how to implement this
+
+
+@Bot.event
+async def on_message(Message):
+    print("someone sent a message!!!!", Message.content, Message.channel, type(Message.channel))
+
+    #also check previoust couple messages as the Stryper link is usually separate
+    num_prev_to_check = 2
+    _msg_iter = Message.channel.history(limit=num_prev_to_check, oldest_first=False)
+    previous_messages_list = [msg for msg in _msg_iter]
+
+    print(f"_msg_iter: {_msg_iter}, list: {previous_messages_list}")
+
+    stryper_mentioned = False
+    stryper_link_present = False
+    stryper_title_in_msg_and_link = False
+    
+    for Msg in _msg_iter:
+        if True:
+            stryper_link_present = True
+
+        if True:
+            stryper_mentioned = True
+
+    # every stryper saturday has a Stryper URL, title, and mention ('Stryper Saturday')
+    someone_has_called_stryper_saturday = stryper_link_present and stryper_mentioned and stryper_title_in_msg_and_link
+
+
+    #if today is trigger day AND message is stryper saturday
+        #cancel trigger
 
 
 @Bot.event
