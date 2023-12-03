@@ -32,7 +32,7 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=19, minute=49, tzinfo=TIMEZONE) 
+TRIGGER_TIME = datetime.time(hour=20, minute=22, tzinfo=TIMEZONE) 
 TRIGGER_DAY_STR = "Sunday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
@@ -443,7 +443,35 @@ async def trigger(channel):
             else:
                 #is SS enacted for Msg??
                 print(f"author: {Msg.author}  | content: {Msg.content}")
+                yt_video_template_str = "https://www.youtube.com/watch?v="
+                yt_video_id_len = 11 #may change in future depending on YouTube's system; not likely though :D
 
+                            
+                stryper_mentioned = "stryper saturday" in Msg.content.lower() 
+                yt_link_present = yt_video_template_str in Msg.content
+
+                if yt_link_present:
+                    #grab
+                    slice_start = Msg.content.find(yt_video_template_str)
+                    slice_end = slice_start + len(yt_video_template_str) + yt_video_id_len
+                    url = Msg.content[slice_start:slice_end]
+
+                    print(f"start: {slice_start}, end: {slice_end}, url: {url}")
+
+                '''
+                stryper_link_present = False
+                stryper_title_in_msg_and_link = False
+                
+                for Msg in _msg_iter:
+                    if True:
+                        stryper_link_present = True
+
+                    if True:
+                        stryper_mentioned = True
+
+                # every stryper saturday has a Stryper URL, title, and mention ('Stryper Saturday')
+                someone_has_called_stryper_saturday = stryper_link_present and stryper_mentioned and stryper_title_in_msg_and_link
+                '''
         already_enacted = True in enacted_bit_map
 
         if not already_enacted:
@@ -589,7 +617,7 @@ async def remove_template(Context):
     if is_member_privileged:
         pass #really not sure how to implement this
 
-
+'''
 @Bot.event
 async def on_message(Message):
     print("someone sent a message!!!!", Message.content, Message.channel, type(Message.channel))
@@ -621,7 +649,7 @@ async def on_message(Message):
         #cancel trigger
 
     """
-
+'''
 
 @Bot.event
 async def on_ready():
