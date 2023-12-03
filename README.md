@@ -78,7 +78,8 @@ These files are probably not very easy to read, but were helpful in testing stuf
     
 
 ## To Do
-- `.remove`: remove song from database.
+- Determine how to check for previous posts of Stryper Saturday.
+- `.remove`: remove song from database. Not sure about this one
 - Finish triggering.
 - Catch legitimate non-youtube links when validating
 - add a slash command to print song and template entries from database
