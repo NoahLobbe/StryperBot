@@ -17,6 +17,10 @@ It is recommended that a 'superuser'/'debug' server/guild or text channel is all
 ***As for the instructions for adding the Bot to a server...I will get around to it :D***
 
 
+### Operational Notes
+Bot will not recognise stryper video links whose youtube author is not Stryper themself.
+
+
 ### Secrets
 Without knowing a business/industry method for storing secrets, the secrets are stored in the environment/system variables of the machine the Bot is running on. However, if the Bot is being run off an external server, then a file accessible by the Bot is the 'best' next way. Currently, a `.env` file is being used for secrets, using `python-dotenv` library to make `os.getenv("token string")` read from a `.env` file, easily.
 

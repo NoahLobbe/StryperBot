@@ -32,8 +32,8 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=19, minute=29, tzinfo=TIMEZONE) 
-TRIGGER_DAY_STR = "Saturday" #"Saturday"
+TRIGGER_TIME = datetime.time(hour=19, minute=49, tzinfo=TIMEZONE) 
+TRIGGER_DAY_STR = "Sunday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
 
@@ -432,12 +432,17 @@ async def trigger(channel):
         print(f"AfterDate: {AfterDate}")
 
         Msg_Iter = channel.history(after=AfterDate, oldest_first=False)
+        
 
         enacted_bit_map = []
 
-        for Msg in Msg_Iter:
-            #is SS enacted for Msg??
-            print(f"author: {Msg.author}  | content: {Msg.content}")
+
+        async for Msg in Msg_Iter:
+            if Msg.author == Bot.user:
+                print("...skiping...")
+            else:
+                #is SS enacted for Msg??
+                print(f"author: {Msg.author}  | content: {Msg.content}")
 
         already_enacted = True in enacted_bit_map
 
@@ -448,12 +453,11 @@ async def trigger(channel):
 
 
 
-        print(f"AfterDate: {AfterDate}")
 
         
         #"""
     else:
-        day_str = _getDictKey(DAYS_LEGEND, day) 
+        day_str = _getDictKey(DAYS_LEGEND, day_num) 
         msg = f"Wrong day to trigger as today is {day_str} not {TRIGGER_DAY_STR} \n:("
 
         await CHANNEL.send(msg)
@@ -590,6 +594,7 @@ async def remove_template(Context):
 async def on_message(Message):
     print("someone sent a message!!!!", Message.content, Message.channel, type(Message.channel))
 
+    """
     #also check previoust couple messages as the Stryper link is usually separate
     num_prev_to_check = 2
     _msg_iter = Message.channel.history(limit=num_prev_to_check, oldest_first=False)
@@ -614,6 +619,8 @@ async def on_message(Message):
 
     #if today is trigger day AND message is stryper saturday
         #cancel trigger
+
+    """
 
 
 @Bot.event
