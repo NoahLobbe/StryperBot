@@ -32,7 +32,7 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=20, minute=22, tzinfo=TIMEZONE) 
+TRIGGER_TIME = datetime.time(hour=20, minute=35, tzinfo=TIMEZONE) 
 TRIGGER_DAY_STR = "Sunday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
@@ -436,13 +436,13 @@ async def trigger(channel):
 
         enacted_bit_map = []
 
-
+        i = 0
         async for Msg in Msg_Iter:
             if Msg.author == Bot.user:
                 print("...skiping...")
             else:
                 #is SS enacted for Msg??
-                print(f"author: {Msg.author}  | content: {Msg.content}")
+                print(f"i: {i}, author: {Msg.author}  | content: {Msg.content}")
                 yt_video_template_str = "https://www.youtube.com/watch?v="
                 yt_video_id_len = 11 #may change in future depending on YouTube's system; not likely though :D
 
@@ -454,9 +454,14 @@ async def trigger(channel):
                     #grab
                     slice_start = Msg.content.find(yt_video_template_str)
                     slice_end = slice_start + len(yt_video_template_str) + yt_video_id_len
-                    url = Msg.content[slice_start:slice_end]
+                    yt_url = Msg.content[slice_start:slice_end]
 
-                    print(f"start: {slice_start}, end: {slice_end}, url: {url}")
+                    print(f"start: {slice_start}, end: {slice_end}, url: {yt_url}")
+
+                    is_valid_yt, yt_title, _clean_url = _validateYoutubeURL(yt_url)
+
+                    print(f"URL validation: {is_valid_yt}, title: {yt_title}, clean: {_clean_url}")
+
 
                 '''
                 stryper_link_present = False
@@ -472,6 +477,7 @@ async def trigger(channel):
                 # every stryper saturday has a Stryper URL, title, and mention ('Stryper Saturday')
                 someone_has_called_stryper_saturday = stryper_link_present and stryper_mentioned and stryper_title_in_msg_and_link
                 '''
+            i += 1
         already_enacted = True in enacted_bit_map
 
         if not already_enacted:
