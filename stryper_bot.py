@@ -22,8 +22,9 @@ from bs4 import BeautifulSoup
 
 
 ###Constants
-IS_DEBUGGING = True
-IS_DAVE_MODE = True
+DEBUG_MODE = True
+VERBOSE_MODE = True #prints everything to another channel as well as printing to terminal
+DAVE_MODE = True
 
 JSON_INDENTS = 4
 DATA_FILE = "data.json"
@@ -96,7 +97,7 @@ async def _getChannel(debug_mode=True):
 
     
 
-### Miscen... helper functions
+### Miscellaneous helper functions
 def _getDictKey(Dict, value):
     """Returns key from the key:value pair in a dict"""
     for k, v in Dict.items(): 
@@ -281,7 +282,7 @@ def _addTemplate(new_template):
 
 
 ### songs helper functions
-def __getSongs():
+def _getSongs():
     """Returns list of songs"""
     with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)["songs"]
@@ -363,13 +364,13 @@ def _updateSong(song_url, new_rating, new_notes):
 
 def _getSong(index):
     """Returns a song dict of the given index in database"""
-    songs_list = __getSongs()
+    songs_list = _getSongs()
     return songs_list[index]
 
 
 def _getRandomSong():
     "Returns a song dict"
-    songs_list = __getSongs()
+    songs_list = _getSongs()
     song_dict = rand.choice(songs_list)
     return song_dict
 
@@ -536,7 +537,7 @@ async def trigger(channel):
             msg = "Looks like Stryper central today, as my alogrithm is telling me *more than one* person is enacting Stryper Saturday!!!"
 
         else:
-            if IS_DAVE_MODE:
+            if DAVE_MODE:
                 User = list(enactors.keys())[0]
                 msg = f"{User.mention} grrrrrrrr"
             else:
@@ -577,6 +578,7 @@ async def alive(Context):
     print(msg)
 
 
+## song slash commands
 @Bot.command()
 async def random(Context):
     """Posts a random song from database, provided the member to call random has the privilege"""
@@ -652,6 +654,30 @@ async def update(Context, song_url, new_rating, *new_notes):
 
 
 @Bot.command()
+async def songs(Context):
+    """Prints all the songs from database nicely"""
+    is_member_privileged = await isMemberPrivileged(Context) 
+
+    if is_member_privileged:
+        print("printing song database...")
+        msg = "Song database: \n"
+
+        for i, song in enumerate(_getSongs()):
+            #make song dict into nice string
+            raw_notes = song["notes"]
+            if type(raw_notes) != str:
+                notes = " ".join(song["notes"])
+            else:
+                notes = raw_notes
+            msg += f"\t{i}: {song['title']}, <{song['url']}>, {song['rating']}/10, {notes} \n"
+
+        await Context.send(msg)
+        print(msg)
+
+
+
+##template slash commands
+@Bot.command()
 async def add_template(Context, *raw_new_template_parts):
     """Add a template string to database"""
     is_member_privileged = await isMemberPrivileged(Context) 
@@ -692,46 +718,29 @@ async def remove_template(Context):
     if is_member_privileged:
         pass #really not sure how to implement this
 
-'''
-@Bot.event
-async def on_message(Message):
-    print("someone sent a message!!!!", Message.content, Message.channel, type(Message.channel))
 
-    """
-    #also check previoust couple messages as the Stryper link is usually separate
-    num_prev_to_check = 2
-    _msg_iter = Message.channel.history(limit=num_prev_to_check, oldest_first=False)
-    previous_messages_list = [msg for msg in _msg_iter]
+@Bot.command()
+async def templates(Context):
+    """Prints all the templates from database nicely"""
+    is_member_privileged = await isMemberPrivileged(Context) 
 
-    print(f"_msg_iter: {_msg_iter}, list: {previous_messages_list}")
+    if is_member_privileged:
+        print("printing template database...")
+        msg = "Template database: \n"
 
-    stryper_mentioned = False
-    stryper_link_present = False
-    stryper_title_in_msg_and_link = False
-    
-    for Msg in _msg_iter:
-        if True:
-            stryper_link_present = True
+        for i, template in enumerate(_getTemplates()):
+            msg += f"\t{i}: {template} \n"
 
-        if True:
-            stryper_mentioned = True
+        await Context.send(msg)
+        print(msg)
 
-    # every stryper saturday has a Stryper URL, title, and mention ('Stryper Saturday')
-    someone_has_called_stryper_saturday = stryper_link_present and stryper_mentioned and stryper_title_in_msg_and_link
-
-
-    #if today is trigger day AND message is stryper saturday
-        #cancel trigger
-
-    """
-'''
-
+###event commands
 @Bot.event
 async def on_ready():
     """Runs when Bot is ready, kind of like a class constructor/init/"""
     #setup variables
     global CHANNEL
-    CHANNEL = await _getChannel(IS_DEBUGGING) 
+    CHANNEL = await _getChannel(DEBUG_MODE) 
 
     _loadPrivilegedMembers()
 

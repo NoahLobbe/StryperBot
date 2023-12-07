@@ -25,7 +25,7 @@ The Bot checks these conditions to determine if Stryper Saturday has been enacte
 4. The author of the above conditions has to be the same, and the messages (if several) have to be in an unbroken 'clump' or 'set' of messages (no other user 'interupting' with a message betwen them)
 
 #### Dave Mode
-Set with the flag `IS_DAVE_MODE`. It affects:
+Set with the flag `DAVE_MODE`. It affects:
 - Response to Stryper Saturday Enactor(s), changes to be more a humourous Dave's style response. **Not fully supported**
 
 
@@ -44,15 +44,21 @@ Without knowing a business/industry method for storing secrets, the secrets are 
 ## 'Slash' Commands
 'Slash' commands can only be run by those in `PRIVILEGED_MEMBERS`, type is `set`, (which also contains `AUTHOR_NAME` for ease of use). Currently, it does not matter what channel the privileged member is to use any 'slash' command, it will respond in the same channel.
 
-#### Commands (slash prefix included):
+#### Commands (slash prefix included)
+Miscellaneous:
 - `.alive`: basically a command (available to **everyone**) to check if it is running, by replying with a message... :D
+
+Songs:
 - `.add`: adds a song to database. Has parameters `youtube_url` (`str`), `rating` (`float`, from 0 to 10), and `notes` (`str`) which can be contain in quotes or not (script catches it). 
 Additionally, suppression of links are also caught, e.g. `<url passed>`.
     - Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
 - `.update`: updates a song in the database. Has the same parameters as `.add`. Overwrites the `rating` and `notes` of existing song in database.
-- ...
+- `.songs`: posts a message of the songs database with their indices.
+
+Templates
 - `.add_template`: adds the text after the command as a template for a Stryper Saturday post. **Must** contain template codes (see Data Structure section). Text can be inside quotes or not.
     - Example (Discord channel): `.add_template Greetings fans! \nToday's Stryper Saturday is the song {title}, with a rating of {rating}: {url}`
+- `.templates`: posts a message of the templates database with their indices.
 
 
 
