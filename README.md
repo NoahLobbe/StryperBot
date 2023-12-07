@@ -19,10 +19,10 @@ It is recommended that a 'superuser'/'debug' server/guild or text channel is all
 
 ### Operational Notes
 The Bot checks these conditions to determine if Stryper Saturday has been enacted:
-1 `stryper saturday` is contained in message
-2 `rating` is contained in message
-3 A link is contained, AND is an official Stryper youtube video 
-4 The author of the above conditions has to be the same, and the messages (if several) have to be in an unbroken 'clump' or 'set' of messages (no other user 'interupting' with a message betwen them)
+- 1 `stryper saturday` is contained in message
+- 2 `rating` is contained in message
+- 3 A link is contained, AND is an official Stryper youtube video 
+- 4 The author of the above conditions has to be the same, and the messages (if several) have to be in an unbroken 'clump' or 'set' of messages (no other user 'interupting' with a message betwen them)
 
 #### Dave Mode
 Set with the flag `IS_DAVE_MODE`. It affects:
