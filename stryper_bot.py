@@ -10,6 +10,7 @@ import json
 import aiohttp
 import datetime
 import random as rand
+import logging
 
 #denpendencies
 import discord
@@ -53,62 +54,92 @@ AUTHOR = set()
 def _getBotToken():
     """Returns str"""
     BOT_TOKEN = os.getenv("STRYPER_BOT_TOKEN")
-    assert BOT_TOKEN is not None
+    #assert BOT_TOKEN is not None
+    logging.info("Bot token successfully obtained from secrets")
     return BOT_TOKEN
 
 
 def _loadPrivilegedMembers():
     """Loads the usernames of discord members who have Bot privileges"""
-    global PRIVILEGED_MEMBERS
-    #general privileged
+    global PRIVILEGED_MEMBERS, AUTHOR
+    ## general privileged
     privileged_member_names_str = os.getenv("PRIVILEGED_MEMBER_NAMES")
-    assert privileged_member_names_str is not None
+    #assert privileged_member_names_str is not None
+    if privileged_member_names_str is not None:
+        logging.info("Privileged member names successfully obtained from secrets")
+    else:
+        logging.debug("privileged_member_names_str is None")
 
     privileged_member_names = privileged_member_names_str.split(',')
     privileged_members_list = []
     
     for name in privileged_member_names:
         privileged_members_list.append(name)
-
-    #get author too.
+    
+    ## get author too.
     author_name = os.getenv("AUTHOR_NAME")
-    assert author_name is not None
+    #assert author_name is not None
+    if author_name is not None:
+        logging.info("Author name successfully obtained from secrets")
+    else:
+        logging.debug("author_name is None")
 
     if author_name not in privileged_members_list:
         privileged_members_list.append(author_name) #order doesn't matter as it wil be turned into a `set``
 
     PRIVILEGED_MEMBERS = set(privileged_members_list)
-    AUTHOR = set(author_name) #don't want it mutable
+    AUTHOR = author_name
 
-    #print(f"PRIVILEGED_MEMBERS (with author): {PRIVILEGED_MEMBERS}")
+    logging.info("AUTHOR: %s | PRIVILEGED_MEMBERS: %s", AUTHOR, PRIVILEGED_MEMBERS)
 
 
 async def _getChannel(debug_mode=True):
     """Returns a discord.py Channel object to be used"""
     if debug_mode:
+        logging.info("Using debug mode channel")
         channel_id_str = os.getenv('DEBUG_CHANNEL_ID')
     else:
         channel_id_str = os.getenv('DEPLOYED_CHANNEL_ID')
-    channel_id = int(channel_id_str)
 
-    channel = Bot.get_channel(channel_id)
-    #print(f"_getChannel(): {channel_id}, {channel}")
-    return channel
+    if channel_id_str.isdigit():
+        channel_id = int(channel_id_str)
+    
+        channel = Bot.get_channel(channel_id)
+        if channel is None:
+            logging.debug("channel is None, ID from secrets is %s", channel_id)
+        else:
+            logging.info("channel successfully madet, %s", channel.name)
+        return channel
+    else:
+        logging.debug("channel_id_str has been corrupted, fails .isdigit() test: %s", channel_id_str)
+        return False
+
 
     
 
 ### Miscellaneous helper functions
 def _getDictKey(Dict, value):
-    """Returns key from the key:value pair in a dict"""
-    for k, v in Dict.items(): 
-        if v == value:
-            return k
+    """Returns key from the key:value pair in a dict. Returns None if not found"""
+    if type(Dict) == dict:
+        for k, v in Dict.items(): 
+            if v == value:
+                return k
+        logging.info("Couldn't find %s in %s", value, Dict)
+        return None
+    else:
+        logging.debug("type error in _getDictKey(), %s is not dict", Dict)
+        return None
         
 def _str2DList(List):
-    string = ""
-    for row in List:
-        string += str(row) + '\n'
-    return string
+    """Returns the string of a 2D list. Returns False if List is not a list"""
+    if type(List) == list:
+        string = ""
+        for row in List:
+            string += str(row) + '\n'
+        return string
+    else:
+        logging.debug("type error in _str2DList(), %s is not list", List)
+        return False
 
 
 
@@ -119,48 +150,56 @@ def _isYoutube(url):
     and str of the youtube video's title if it is legit."""
     is_youtube = False
     R = requests.get(url)
+    logging.debug("Requests status: %s", R.status_code)
     html = BeautifulSoup(R.content, features="html.parser")
 
     for tag in html.find_all("link", attrs={'itemprop':'url'}): #simplest and first spot to find ...
-        #print(tag)
         if "href" in tag.attrs.keys(): #HTML tag 'link' would have to have a href right?
             if (tag.attrs['href'] == "http://www.youtube.com/channel/UC20qdRIIoh4Xr6jnmZ4HBng"): #...stryper's official channel URL
                 is_youtube = True
     #get title
     title = html.find("meta", attrs={"name":"title"}).attrs["content"]
-    print( is_youtube, title)
+    logging.info("in _isYoutube, is_youtube: %s, title: %s", is_youtube, title)
     return is_youtube, title
     
 
 def _cleanYoutubeURL(url):
     """Returns str. Gets rid of extra unneccessary data in url (str)"""
+    logging.info("cleaning youtube url...")
     cut_off_index = url.find("&") #first one found is returned, which is the start of extra needless data in url
 
     if cut_off_index != -1: 
         yt_url = url[:cut_off_index]
     else:
         yt_url = url
-    
+    logging.info("url parameters removed: %s", yt_url)
     #If people want to suppress preview of a link, eg. <link string>, the angle brackets need to be removed
     if yt_url[0] == '<':
         yt_url = yt_url[1:]
+        logging.info("Removed '<', %s", yt_url)
 
     if yt_url[-1] == '>':
         yt_url = yt_url[:-1]
+        logging.info("Removed '>', %s", yt_url)
 
+    logging.info("Cleaned youtube url: %s", yt_url)
     return yt_url
 
 
 def _validateYoutubeURL(url):
     """Returns bool as to whether 'url' (str) is legit 
     and if it is actually a youtube video link"""
+    logging.info("Validating youtube url...")
     clean_url = _cleanYoutubeURL(url)
     is_valid_url = bool(validators.url(clean_url))
+    
     if is_valid_url:
-        print(f"valid URL is cleaned to: {clean_url}")
+        logging.info("Valid url is cleaned to: %s", clean_url)
         is_youtube, yt_title = _isYoutube(clean_url)
+        logging.info("Cleaned url is youtube: %s", is_youtube)
         return is_youtube, yt_title, clean_url       
     else:
+        logging.debug("Invalid url! %s", clean_url)
         return False, "", clean_url
 
 
@@ -170,9 +209,10 @@ def _validateRating(rating_str):
         rating = float(rating_str)
         if (rating).is_integer():
             rating = int(rating) #makes the text output nicer later :D
+        logging.info("rating conversion successful, %s", rating)
         return (rating >= 0 and rating <= 10)
     except ValueError as e:
-        print(e)
+        logging.debug("rating is not a float, %s", e)
         return False
 
 
@@ -181,7 +221,7 @@ def _validateRating(rating_str):
 def _doesDataFileExist():
     """Returns bool. True if already existed, and False if file had to be made"""
     if not os.path.exists(DATA_FILE):
-        print(f"Making '{DATA_FILE}'")
+        logging.info("Making '%s'", DATA_FILE)
 
         with open(DATA_FILE, "w+") as new_file:
             data = {
@@ -766,6 +806,7 @@ async def on_ready():
 
     
 if __name__ == "__main__":
+    logging.basicConfig(filename="verbose output.log", encoding="utf-8", level=logging.DEBUG)
     load_dotenv()  #enable os.getenv() to actually get 'environment variables' from .env file
 
     try:
