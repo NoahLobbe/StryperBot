@@ -23,6 +23,7 @@ from bs4 import BeautifulSoup
 
 ###Constants
 IS_DEBUGGING = True
+IS_DAVE_MODE = True
 
 JSON_INDENTS = 4
 DATA_FILE = "data.json"
@@ -32,10 +33,10 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=20, minute=35, tzinfo=TIMEZONE) 
-TRIGGER_DAY_STR = "Sunday" #"Saturday"
+TRIGGER_TIME = datetime.time(hour=17, minute=45, tzinfo=TIMEZONE) 
+TRIGGER_DAY_STR = "Thursday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
-TRIGGER_SETUP_MSG = f"Trigger time set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
+TRIGGER_SETUP_MSG = f"Deployment set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
 
 #bot setup
 BotIntents = discord.Intents.default()
@@ -101,6 +102,13 @@ def _getDictKey(Dict, value):
     for k, v in Dict.items(): 
         if v == value:
             return k
+        
+def _str2DList(List):
+    string = ""
+    for row in List:
+        string += str(row) + '\n'
+    return string
+
 
 
 
@@ -436,18 +444,23 @@ async def trigger(channel):
 
         enacted_bit_map = []
 
+        msg_clumps = {}
+
+        prev_author = ""
+
         i = 0
         async for Msg in Msg_Iter:
             if Msg.author == Bot.user:
-                print("...skiping...")
+                print("...skipping self...")
             else:
                 #is SS enacted for Msg??
-                print(f"i: {i}, author: {Msg.author}  | content: {Msg.content}")
+                print(f"\ti: {i}, author: {Msg.author}  | content: {Msg.content}")
                 yt_video_template_str = "https://www.youtube.com/watch?v="
                 yt_video_id_len = 11 #may change in future depending on YouTube's system; not likely though :D
 
                             
-                stryper_mentioned = "stryper saturday" in Msg.content.lower() 
+                is_stryper_mentioned = "stryper saturday" in Msg.content.lower() 
+                has_rating = "rating" in Msg.content.lower()
                 yt_link_present = yt_video_template_str in Msg.content
 
                 if yt_link_present:
@@ -456,35 +469,91 @@ async def trigger(channel):
                     slice_end = slice_start + len(yt_video_template_str) + yt_video_id_len
                     yt_url = Msg.content[slice_start:slice_end]
 
-                    print(f"start: {slice_start}, end: {slice_end}, url: {yt_url}")
+                    print(f"\tstart: {slice_start}, end: {slice_end}, url: {yt_url}")
 
-                    is_valid_yt, yt_title, _clean_url = _validateYoutubeURL(yt_url)
+                    is_valid_yt, _yt_title, _clean_url = _validateYoutubeURL(yt_url)
 
-                    print(f"URL validation: {is_valid_yt}, title: {yt_title}, clean: {_clean_url}")
+                    print(f"\tURL validation: {is_valid_yt}, title: {_yt_title}, clean: {_clean_url}")
+
+                else:
+                    is_valid_yt = False
 
 
-                '''
-                stryper_link_present = False
-                stryper_title_in_msg_and_link = False
-                
-                for Msg in _msg_iter:
-                    if True:
-                        stryper_link_present = True
+                if is_stryper_mentioned or has_rating or is_valid_yt:
+                    # add to list to check through
+                    msg_conditions = [is_stryper_mentioned, has_rating, is_valid_yt] 
+                    print(f"prev_author: {prev_author}, msg_clumps: {msg_clumps}")
+                    if Msg.author == prev_author:
+                        #make sure there is a list ready, otherwise KeyError
+                        if prev_author not in msg_clumps:
+                            msg_clumps[prev_author] = []
 
-                    if True:
-                        stryper_mentioned = True
+                        print("...adding to existing clump...")
+                        msg_clumps[prev_author].append(msg_conditions) # add to list to keep clump
+                    else:
+                        print("...making new clump...")
+                        msg_clumps[Msg.author] = [msg_conditions] # make a new clump
 
-                # every stryper saturday has a Stryper URL, title, and mention ('Stryper Saturday')
-                someone_has_called_stryper_saturday = stryper_link_present and stryper_mentioned and stryper_title_in_msg_and_link
-                '''
+                    #msg_conditions_list.append(msg_conditions)
+            prev_author = Msg.author
             i += 1
+
+        print("\nProcessing clumbs...")
+        #go through each clump
+        enactors = {}
+        for author, msg_properties_list in msg_clumps.items():
+            print(f"author: {author}, msg_properties_list: \n{_str2DList(msg_properties_list)}")
+            #msg_properties_list is a 2D list
+            col_bitwise_or_results = []
+            #bit-wise OR each column together
+            num_cols = len(msg_properties_list[0])
+            num_rows = len(msg_properties_list)
+
+            for col in range(num_cols):
+                col_bit_list = []
+                for row in range(num_rows):
+                    col_bit_list.append(msg_properties_list[row][col])
+
+                OR_result = any(col_bit_list) 
+                col_bitwise_or_results.append(OR_result)
+
+                print(f"col:{col}, col_bit_list: {col_bit_list}, OR_result: {OR_result}")
+
+
+            stryper_saturday_enacted = all(col_bitwise_or_results)
+            print(f"col_bitwise_or_results: {col_bitwise_or_results}, stryper_saturday_enacted: {stryper_saturday_enacted}")
+
+            if stryper_saturday_enacted:
+                if author not in enactors: #add blank entry
+                    enactors[author] = 0
+                
+                enactors[author] += 1
+
+        print(f"enactors: {enactors}")
+
+        #respone
+        if len(enactors.keys()) > 1:
+            msg = "Looks like Stryper central today, as my alogrithm is telling me *more than one* person is enacting Stryper Saturday!!!"
+
+        else:
+            if IS_DAVE_MODE:
+                User = list(enactors.keys())[0]
+                msg = f"{User.mention} grrrrrrrr"
+            else:
+                msg = "**Rock on!**"
+
+
+            await channel.send(msg)
+            print(msg)
+
+        '''
         already_enacted = True in enacted_bit_map
 
         if not already_enacted:
             pass #enact
         else:
             pass #reply with a 'oo-rah!!!' kinda of message??? (REPLY @ ENACT-TOR)
-
+        '''
 
 
 
@@ -503,7 +572,7 @@ async def trigger(channel):
 @Bot.command()
 async def alive(Context):
     """Simple test slash command to determine if Bot is operating. Anybody can call this."""
-    msg = f"*I AM ALIVE!!!*"
+    msg = f"*I **AM** ALIVE!!!*"
     await Context.send(msg)
     print(msg)
 
@@ -602,7 +671,7 @@ async def add_template(Context, *raw_new_template_parts):
             
                 
         else:
-            msg = f"ERROR in '{new_template}':"
+            msg = f"ERROR adding new template: '{new_template}':"
             #determine error message based on `code_bools`
             if not code_bools[0]:
                 msg += "\n\tRequires title code '{title}'"

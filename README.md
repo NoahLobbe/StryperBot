@@ -18,7 +18,15 @@ It is recommended that a 'superuser'/'debug' server/guild or text channel is all
 
 
 ### Operational Notes
-Bot will not recognise stryper video links whose youtube author is not Stryper themself.
+The Bot checks these conditions to determine if Stryper Saturday has been enacted:
+1 `stryper saturday` is contained in message
+2 `rating` is contained in message
+3 A link is contained, AND is an official Stryper youtube video 
+4 The author of the above conditions has to be the same, and the messages (if several) have to be in an unbroken 'clump' or 'set' of messages (no other user 'interupting' with a message betwen them)
+
+#### Dave Mode
+Set with the flag `IS_DAVE_MODE`. It affects:
+- Response to Stryper Saturday Enactor(s), changes to be more a humourous Dave's style response. **Not fully supported**
 
 
 ### Secrets
@@ -55,7 +63,7 @@ As of 2nd December 2023, all functions that are not Bot functions, now start wit
 ### Style guide:
 - Variables are also in the `snake_case`
 - Constant variables are in `SCREAMING_SNAKE_CASE`
-- Slash commands are in the `snake_case` style
+- Slash commands are in the `snake_case` style for ease of Discord users
 - Bot functions are `camelCase`
 - Other 'helper' functions are in `_camelCase`, the underscore prefix notation to help indictate that they are helpers. Maybe there is a better method *shrug*; if so let me know!
 - Class objects are in `PascalCase`
