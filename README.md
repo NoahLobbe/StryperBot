@@ -96,9 +96,12 @@ These files are probably not very easy to read, but were helpful in testing stuf
     
 
 ## To Do
-- Determine how to check for previous posts of Stryper Saturday.
-- `.remove`: remove song from database. Not sure about this one
-- Finish triggering.
-- Catch legitimate non-youtube links when validating
-- add a slash command to print song and template entries from database
-- add the Dave feature; bot responds to Stryper Saturday Enactor
+- [x] Determine how to check for previous posts of Stryper Saturday.
+- [ ] Remove functions for songs and templates. Not sure of how to implement; maybe by index?
+    - [ ] `.remove_s`: remove song from database
+    - [ ] `.remove_t`: remove template from database
+- [ ] Finish triggering.
+- [ ] Catch legitimate non-youtube links when validating
+- [x] add a slash command to print song and template entries from database
+- [ ] add the Dave feature; bot responds to Stryper Saturday Enactor
+- [ ] Add a verbose output channel so that i don't always have to figure out a way to watch the program terminal output on Lance's server. Should ask him...
