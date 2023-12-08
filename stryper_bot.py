@@ -48,7 +48,7 @@ Bot = discord.ext.commands.Bot(command_prefix=".", intents=BotIntents)
 
 CHANNEL = None #the channel to post messages into
 PRIVILEGED_MEMBERS = set() #wanted something immutable
-AUTHOR = set()
+AUTHOR = None
 
 
 ### Secrets helper functions
@@ -201,7 +201,7 @@ def _doesTemplateExist(templates_list, template):
     """Returns (bool, int). True if already exists, int of index if it exists, 0 otherwise."""
     for i, t in enumerate(templates_list):
         if (t == template):
-            print("exists!")
+            logging.info("Template exists in database!")
             return True, i
     return False, 0
 
@@ -261,7 +261,7 @@ def _doesSongExist(songs_list, song_url):
     print(f"in _doesSongExist(), song_url: {song_url} ")
     for i, s in enumerate(songs_list):
         if (song_url == s["url"]):
-            print("exists!")
+            logging.info("Song exists in database!")
             return True, i
     return False, 0
 
@@ -269,7 +269,7 @@ def _doesSongExist(songs_list, song_url):
 def _addSong(title, url, rating, notes):
     """Returns True if successful in adding the song to database or overwriting if""" ##################################finish
     new_song = {"title":title, "url":url, "rating":rating, "notes":notes}
-    print(f"in addSong(), url: {new_song['url']}")
+    logging.debug("in addSong(), url: %s", new_song['url'])
 
     current_data_file = _getData()
     current_songs_list = current_data_file["songs"]
@@ -344,12 +344,12 @@ async def addSong(Context, title, url, rating, raw_notes):
     is_success = _addSong(title, url, rating, notes)
     if is_success:
         await postSong(Context, _getSong(-1))
-        print("...successful")
+        logging.info("Adding song to database successful")
         return True
     else:
         error_msg = "Already added! Update entry using .update command"
         await Context.send(error_msg)
-        print(error_msg)
+        logging.debug(error_msg)
         return False
 
 
@@ -371,7 +371,7 @@ async def trigger(channel):
     day_num = DateNow.weekday()
     if day_num == TRIGGER_DAY_NUM:
         
-        print("Triggered")
+        logging.info("Triggered")
 
         #"""
         #get messages from today
@@ -381,11 +381,8 @@ async def trigger(channel):
         tzinfo = TIMEZONE
         AfterDate = datetime.datetime(year=year, month=month, day=day, tzinfo=tzinfo)
 
-        print(f"AfterDate: {AfterDate}")
-
         Msg_Iter = channel.history(after=AfterDate, oldest_first=False)
-        
-
+    
         enacted_bit_map = []
 
         msg_clumps = {}
@@ -395,10 +392,10 @@ async def trigger(channel):
         i = 0
         async for Msg in Msg_Iter:
             if Msg.author == Bot.user:
-                print("...skipping self...")
+                logging.debug("...skipping self...")
             else:
                 #is SS enacted for Msg??
-                print(f"\ti: {i}, author: {Msg.author}  | content: {Msg.content}")
+                logging.debug("\ti: %s, author: %s  | content: %s", i, Msg.author, Msg.content)
                 yt_video_template_str = "https://www.youtube.com/watch?v="
                 yt_video_id_len = 11 #may change in future depending on YouTube's system; not likely though :D
 
@@ -413,11 +410,11 @@ async def trigger(channel):
                     slice_end = slice_start + len(yt_video_template_str) + yt_video_id_len
                     yt_url = Msg.content[slice_start:slice_end]
 
-                    print(f"\tstart: {slice_start}, end: {slice_end}, url: {yt_url}")
+                    logging.debug("\tstart: %s, end: %s, url: %s", slice_start, slice_end, yt_url)
 
                     is_valid_yt, _yt_title, _clean_url = h_functions._validateYoutubeURL(yt_url)
 
-                    print(f"\tURL validation: {is_valid_yt}, title: {_yt_title}, clean: {_clean_url}")
+                    logging.debug("\tUrl validation: %s, title: %s, clean: %s", is_valid_yt, _yt_title, _clean_url)
 
                 else:
                     is_valid_yt = False
@@ -426,27 +423,27 @@ async def trigger(channel):
                 if is_stryper_mentioned or has_rating or is_valid_yt:
                     # add to list to check through
                     msg_conditions = [is_stryper_mentioned, has_rating, is_valid_yt] 
-                    print(f"prev_author: {prev_author}, msg_clumps: {msg_clumps}")
+                    logging.debug("prev_author: %s, msg_clumps: %s", prev_author, msg_clumps)
                     if Msg.author == prev_author:
                         #make sure there is a list ready, otherwise KeyError
                         if prev_author not in msg_clumps:
                             msg_clumps[prev_author] = []
 
-                        print("...adding to existing clump...")
+                        logging.info("...adding to existing clump...")
                         msg_clumps[prev_author].append(msg_conditions) # add to list to keep clump
                     else:
-                        print("...making new clump...")
+                        logging.info("...making new clump...")
                         msg_clumps[Msg.author] = [msg_conditions] # make a new clump
 
                     #msg_conditions_list.append(msg_conditions)
             prev_author = Msg.author
             i += 1
 
-        print("\nProcessing clumbs...")
+        logging.info("\nProcessing clumbs...")
         #go through each clump
         enactors = {}
         for author, msg_properties_list in msg_clumps.items():
-            print(f"author: {author}, msg_properties_list: \n{h_functions._str2DList(msg_properties_list)}")
+            logging.debug("author: %s, msg_properties_list: \n%s", author, h_functions._str2DList(msg_properties_list))
             #msg_properties_list is a 2D list
             col_bitwise_or_results = []
             #bit-wise OR each column together
@@ -461,11 +458,11 @@ async def trigger(channel):
                 OR_result = any(col_bit_list) 
                 col_bitwise_or_results.append(OR_result)
 
-                print(f"col:{col}, col_bit_list: {col_bit_list}, OR_result: {OR_result}")
+                logging.debug("col:%s, col_bit_list: %s, OR_result: %s", col, col_bit_list, OR_result)
 
 
             stryper_saturday_enacted = all(col_bitwise_or_results)
-            print(f"col_bitwise_or_results: {col_bitwise_or_results}, stryper_saturday_enacted: {stryper_saturday_enacted}")
+            logging.info("col_bitwise_or_results: %s, stryper_saturday_enacted: %s", col_bitwise_or_results, stryper_saturday_enacted)
 
             if stryper_saturday_enacted:
                 if author not in enactors: #add blank entry
@@ -473,7 +470,7 @@ async def trigger(channel):
                 
                 enactors[author] += 1
 
-        print(f"enactors: {enactors}")
+        logging.info("enactors: %s", enactors)
 
         #respone
         num_enactors = len(enactors.keys())
@@ -489,9 +486,9 @@ async def trigger(channel):
 
 
             await channel.send(msg)
-            print(msg)
+            logging.info(msg)
         else:
-            print("no enactors, so posting...")
+            logging.info("no enactors, so posting...")
             song = _getRandomSong()
             await postSong(channel, song)
 
@@ -513,7 +510,7 @@ async def trigger(channel):
         msg = f"Wrong day to trigger as today is {day_str} not {TRIGGER_DAY_STR} \n:("
 
         await CHANNEL.send(msg)
-        print(msg)
+        logging.info(msg)
 
 
 
@@ -523,7 +520,7 @@ async def alive(Context):
     """Simple test slash command to determine if Bot is operating. Anybody can call this."""
     msg = f"*I **AM** ALIVE!!!*"
     await Context.send(msg)
-    print(msg)
+    logging.info(msg)
 
 
 ## song slash commands
@@ -534,7 +531,7 @@ async def random(Context):
     if is_member_privileged:
         song = _getRandomSong()
         await postSong(Context, song)
-        print(f"Random song is: {song}")
+        logging.info("Random song is: %s", song)
 
 
 @Bot.command()
@@ -546,7 +543,7 @@ async def add(Context, youtube_url, rating, *raw_notes):
     is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
 
-        print(f"User inputted: '{youtube_url}', '{rating}', and '{raw_notes}'")
+        logging.info("User inputted: '%s', '%s', and '%s'", youtube_url, rating, raw_notes)
 
         #validate user input
         # moved cleaning the URL into _validateYoutubeURL: clean_yt_url = _cleanYoutubeURL(youtube_url)
@@ -558,6 +555,9 @@ async def add(Context, youtube_url, rating, *raw_notes):
             is_successful = await addSong(Context, yt_title, clean_yt_url, rating, raw_notes)
             if is_successful:
                 await Context.send("\nAdded!")
+                logging.info("Added!")
+            else:
+                logging.debug("Adding song to databse failed")
 
         else:    
             url_invalid_str = f"'{clean_yt_url}' is not reachable"
@@ -572,7 +572,7 @@ async def add(Context, youtube_url, rating, *raw_notes):
             else:
                 msg = url_invalid_str + ", and " + rating_invalid_str 
                 
-            print(msg)
+            logging.debug(msg)
             await Context.send(msg)
 
 
@@ -598,7 +598,7 @@ async def update(Context, song_url, new_rating, *new_notes):
             msg = f"ERROR: invalid url passed, '{url}'"
 
         await Context.send(msg)
-        print(msg) 
+        logging.info(msg) 
 
 
 @Bot.command()
@@ -607,7 +607,7 @@ async def songs(Context):
     is_member_privileged = await isMemberPrivileged(Context) 
 
     if is_member_privileged:
-        print("printing song database...")
+        logging.info("printing song database...")
         msg = "Song database: \n"
 
         for i, song in enumerate(_getSongs()):
@@ -620,7 +620,7 @@ async def songs(Context):
             msg += f"\t{i}: {song['title']}, <{song['url']}>, {song['rating']}/10, {notes} \n"
 
         await Context.send(msg)
-        print(msg)
+        logging.info(msg)
 
 
 
@@ -641,7 +641,7 @@ async def add_template(Context, *raw_new_template_parts):
             else:
                 msg = "Template already exists!"
             await Context.send(msg)
-            print(msg)
+            logging.info(msg)
             
                 
         else:
@@ -655,7 +655,7 @@ async def add_template(Context, *raw_new_template_parts):
                 msg += "\n\tRequires url code '{url}'"
             
             await Context.send(msg)
-            print(msg)
+            logging.info(msg)
 
 
 
@@ -673,14 +673,14 @@ async def templates(Context):
     is_member_privileged = await isMemberPrivileged(Context) 
 
     if is_member_privileged:
-        print("printing template database...")
+        logging.info("printing template database...")
         msg = "Template database: \n"
 
         for i, template in enumerate(_getTemplates()):
             msg += f"\t{i}: {template} \n"
 
         await Context.send(msg)
-        print(msg)
+        logging.info(msg)
 
 ###event commands
 @Bot.event
@@ -696,14 +696,14 @@ async def on_ready():
 
 
     #prints
-    print(f"{Bot.user} has connected to Discord, into '{CHANNEL}' channel!")
+    logging.info(f"{Bot.user} has connected to Discord, into '{CHANNEL}' channel!")
     await CHANNEL.send(TRIGGER_SETUP_MSG)
-    print(TRIGGER_SETUP_MSG)
+    logging.info(TRIGGER_SETUP_MSG)
 
     if not already_existed:
         msg = "ERROR: database is empty, please fill..."
         await CHANNEL.send(msg)
-        print(msg)
+        logging.debug(msg)
 
     #loop functions
     await trigger.start(CHANNEL)

@@ -105,3 +105,4 @@ These files are probably not very easy to read, but were helpful in testing stuf
 - [x] add a slash command to print song and template entries from database
 - [ ] add the Dave feature; bot responds to Stryper Saturday Enactor
 - [ ] Add a verbose output channel so that i don't always have to figure out a way to watch the program terminal output on Lance's server. Should ask him...
+- [x] Add logging
