@@ -546,6 +546,7 @@ async def alive(Context):
     logging.info(msg)
 
 
+
 ## song slash commands
 @Bot.command()
 async def random(Context):
@@ -560,7 +561,7 @@ async def random(Context):
 @Bot.command()
 async def add_s(Context, youtube_url, rating, *raw_notes):
     """Adds song to database. 'rating' needs to be a positive float (decimal) from 0 to 10,
-    and 'raw_notes' is just in case some adds song notes without quotes, as discord.py
+    and 'raw_notes' is just in case someone adds song notes without quotes, as discord.py
     seems to split arguements by spaces."""
     is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
