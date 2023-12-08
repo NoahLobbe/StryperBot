@@ -47,20 +47,22 @@ Without knowing a business/industry method for storing secrets, the secrets are 
 #### Commands (slash prefix included)
 Miscellaneous:
 - `.alive`: basically a command (available to **everyone**) to check if it is running, by replying with a message... :D
+- `.random`: posts Stryper Saturday. Sort of a 'manual' override.
 
 Songs:
 - `.add_s`: adds a song to database. Has parameters `youtube_url` (`str`), `rating` (`float`, from 0 to 10), and `notes` (`str`) which can be contain in quotes or not (script catches it). 
 Additionally, suppression of links are also caught, e.g. `<url passed>`. Renamed from `.add`.
     - Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
 - `.update`: updates a song in the database. Has the same parameters as `.add_s`. Overwrites the `rating` and `notes` of existing song in database.
-- `.songs`: posts a message of the songs database with their indices.
 - `remove_s`: Has parameter `index`, which is used to remove that song from database
+- `.songs`: posts a message of the songs database with their indices.
 
 Templates
 - `.add_t`: adds the text after the command as a template for a Stryper Saturday post. **Must** contain template codes (see Data Structure section). Text can be inside quotes or not. Renamed from `.add_template`.
     - Example (Discord channel): `.add_template Greetings fans! \nToday's Stryper Saturday is the song {title}, with a rating of {rating}: {url}`
-- `.templates`: posts a message of the templates database with their indices.
 - `remove_t`: Has parameter `index`, which is used to remove that template from database
+- `.templates`: posts a message of the templates database with their indices.
+
 
 
 
@@ -99,12 +101,13 @@ These files are probably not very easy to read, but were helpful in testing stuf
 
 ## To Do
 - [x] Determine how to check for previous posts of Stryper Saturday.
-- [ ] Remove functions for songs and templates. Not sure of how to implement; maybe by index?
-    - [ ] `.remove_s`: remove song from database
-    - [ ] `.remove_t`: remove template from database
+- [x] Remove functions for songs and templates. Not sure of how to implement; maybe by index?
+    - [x] `.remove_s`: remove song from database
+    - [x] `.remove_t`: remove template from database
 - [ ] Finish triggering.
 - [ ] Catch legitimate non-youtube links when validating
 - [x] add a slash command to print song and template entries from database
 - [ ] add the Dave feature; bot responds to Stryper Saturday Enactor
 - [ ] ~~Add a verbose output channel so that i don't always have to figure out a way to watch the program terminal output on Lance's server.~~ Should ask him...Going to use logging instead
 - [x] Add logging
+- [ ] CHeck to make sure Bot operates in the correct guild and channel

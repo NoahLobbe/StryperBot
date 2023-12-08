@@ -109,11 +109,13 @@ def _validateYoutubeURL(url):
             Logger.info("Cleaned url is youtube: %s", is_youtube)
             return is_youtube, yt_title, clean_url       
         else:
-            Logger.debug("Invalid url! %s", clean_url)
-            return False, "", clean_url
+            msg = "Invalid url (not reachable): " + clean_url
+            Logger.debug(msg)
+            return False, msg, clean_url
     else:
-        Logger.info("url (%s) doesn't contain '%s', automatic fail", url, key_str)
-        return False, "", url
+        msg = f"'{url}' invalid, doesn't contain at least '{key_str}'"
+        Logger.info(msg + ", automatic fail")
+        return False, msg, url
 
 
 def _validateRating(rating_str):
@@ -123,8 +125,8 @@ def _validateRating(rating_str):
         if (rating).is_integer():
             rating = int(rating) #makes the text output nicer later :D
         Logger.info("rating conversion successful, %s", rating)
-        return (rating >= 0 and rating <= 10)
+        return (rating >= 0 and rating <= 10), ""
     except ValueError as e:
-        Logger.debug("rating is not a float, %s", e)
-        return False
+        Logger.debug("rating (%s) is not a float: %s", rating_str, e)
+        return False, f"'{rating_str}' is invalid, has to be a positive decimal from 0 to 10"
     

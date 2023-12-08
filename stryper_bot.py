@@ -36,7 +36,7 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=13, minute=28, tzinfo=TIMEZONE) 
+TRIGGER_TIME = datetime.time(hour=13, minute=55, tzinfo=TIMEZONE) 
 TRIGGER_DAY_STR = "Friday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Deployment set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
@@ -564,38 +564,31 @@ async def add_s(Context, youtube_url, rating, *raw_notes):
     seems to split arguements by spaces."""
     is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
-
         logging.info("User inputted: '%s', '%s', and '%s'", youtube_url, rating, raw_notes)
 
         #validate user input
-        # moved cleaning the URL into _validateYoutubeURL: clean_yt_url = _cleanYoutubeURL(youtube_url)
-        url_is_legit, yt_title, clean_yt_url = h_functions._validateYoutubeURL(youtube_url)
-        rating_is_legit = h_functions._validateRating(rating)
+        url_is_legit, yt_title_or_error, clean_yt_url = h_functions._validateYoutubeURL(youtube_url)
+        rating_is_legit, rating_error_msg = h_functions._validateRating(rating)
         
         #output stuff
         if url_is_legit and rating_is_legit:
-            is_successful = await addSong(Context, yt_title, clean_yt_url, rating, raw_notes)
+            is_successful = await addSong(Context, yt_title_or_error, clean_yt_url, rating, raw_notes)
             if is_successful:
-                await Context.send("\nAdded!")
-                logging.info("Added!")
+                msg = "Added!"
             else:
-                logging.debug("Adding song to databse failed")
-
+                msg = "Adding song to databse failed"
         else:    
-            url_invalid_str = f"'{clean_yt_url}' is not reachable"
-            rating_invalid_str = f"'{rating}' is invalid, has to be a positive decimal from 0 to 10"
-
             if url_is_legit and not rating_is_legit:
-                msg = rating_invalid_str
+                msg = rating_error_msg
 
             elif not url_is_legit and rating_is_legit:
-                msg = url_invalid_str
+                msg = yt_title_or_error
 
             else:
-                msg = url_invalid_str + ", and " + rating_invalid_str 
+                msg = yt_title_or_error + ", and " + rating_error_msg 
                 
-            logging.debug(msg)
-            await Context.send(msg)
+        logging.info(msg)
+        await Context.send(msg)
 
 
 @Bot.command()
