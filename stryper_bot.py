@@ -16,10 +16,11 @@ import logging
 import discord
 import discord.ext.commands
 import discord.ext.tasks
-import validators
 from dotenv import load_dotenv
-import requests
-from bs4 import BeautifulSoup
+
+
+#other files
+import h_functions
 
 
 ###Constants
@@ -35,8 +36,8 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=17, minute=45, tzinfo=TIMEZONE) 
-TRIGGER_DAY_STR = "Thursday" #"Saturday"
+TRIGGER_TIME = datetime.time(hour=10, minute=38, tzinfo=TIMEZONE) 
+TRIGGER_DAY_STR = "Friday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Deployment set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
 
@@ -50,7 +51,7 @@ PRIVILEGED_MEMBERS = set() #wanted something immutable
 AUTHOR = set()
 
 
-###Secrets helper functions
+### Secrets helper functions
 def _getBotToken():
     """Returns str"""
     BOT_TOKEN = os.getenv("STRYPER_BOT_TOKEN")
@@ -90,7 +91,7 @@ def _loadPrivilegedMembers():
     PRIVILEGED_MEMBERS = set(privileged_members_list)
     AUTHOR = author_name
 
-    logging.info("AUTHOR: %s | PRIVILEGED_MEMBERS: %s", AUTHOR, PRIVILEGED_MEMBERS)
+    logging.info("AUTHOR: '%s' | PRIVILEGED_MEMBERS: %s", AUTHOR, PRIVILEGED_MEMBERS)
 
 
 async def _getChannel(debug_mode=True):
@@ -117,103 +118,6 @@ async def _getChannel(debug_mode=True):
 
     
 
-### Miscellaneous helper functions
-def _getDictKey(Dict, value):
-    """Returns key from the key:value pair in a dict. Returns None if not found"""
-    if type(Dict) == dict:
-        for k, v in Dict.items(): 
-            if v == value:
-                return k
-        logging.info("Couldn't find %s in %s", value, Dict)
-        return None
-    else:
-        logging.debug("type error in _getDictKey(), %s is not dict", Dict)
-        return None
-        
-def _str2DList(List):
-    """Returns the string of a 2D list. Returns False if List is not a list"""
-    if type(List) == list:
-        string = ""
-        for row in List:
-            string += str(row) + '\n'
-        return string
-    else:
-        logging.debug("type error in _str2DList(), %s is not list", List)
-        return False
-
-
-
-
-### User input (parsing?) helper functions
-def _isYoutube(url):
-    """Returns bool and str. Bool for whether 'url' (str) is a youtube video url,
-    and str of the youtube video's title if it is legit."""
-    is_youtube = False
-    R = requests.get(url)
-    logging.debug("Requests status: %s", R.status_code)
-    html = BeautifulSoup(R.content, features="html.parser")
-
-    for tag in html.find_all("link", attrs={'itemprop':'url'}): #simplest and first spot to find ...
-        if "href" in tag.attrs.keys(): #HTML tag 'link' would have to have a href right?
-            if (tag.attrs['href'] == "http://www.youtube.com/channel/UC20qdRIIoh4Xr6jnmZ4HBng"): #...stryper's official channel URL
-                is_youtube = True
-    #get title
-    title = html.find("meta", attrs={"name":"title"}).attrs["content"]
-    logging.info("in _isYoutube, is_youtube: %s, title: %s", is_youtube, title)
-    return is_youtube, title
-    
-
-def _cleanYoutubeURL(url):
-    """Returns str. Gets rid of extra unneccessary data in url (str)"""
-    logging.info("cleaning youtube url...")
-    cut_off_index = url.find("&") #first one found is returned, which is the start of extra needless data in url
-
-    if cut_off_index != -1: 
-        yt_url = url[:cut_off_index]
-    else:
-        yt_url = url
-    logging.info("url parameters removed: %s", yt_url)
-    #If people want to suppress preview of a link, eg. <link string>, the angle brackets need to be removed
-    if yt_url[0] == '<':
-        yt_url = yt_url[1:]
-        logging.info("Removed '<', %s", yt_url)
-
-    if yt_url[-1] == '>':
-        yt_url = yt_url[:-1]
-        logging.info("Removed '>', %s", yt_url)
-
-    logging.info("Cleaned youtube url: %s", yt_url)
-    return yt_url
-
-
-def _validateYoutubeURL(url):
-    """Returns bool as to whether 'url' (str) is legit 
-    and if it is actually a youtube video link"""
-    logging.info("Validating youtube url...")
-    clean_url = _cleanYoutubeURL(url)
-    is_valid_url = bool(validators.url(clean_url))
-    
-    if is_valid_url:
-        logging.info("Valid url is cleaned to: %s", clean_url)
-        is_youtube, yt_title = _isYoutube(clean_url)
-        logging.info("Cleaned url is youtube: %s", is_youtube)
-        return is_youtube, yt_title, clean_url       
-    else:
-        logging.debug("Invalid url! %s", clean_url)
-        return False, "", clean_url
-
-
-def _validateRating(rating_str):
-    """Returns bool as to whether rating is valid"""
-    try:
-        rating = float(rating_str)
-        if (rating).is_integer():
-            rating = int(rating) #makes the text output nicer later :D
-        logging.info("rating conversion successful, %s", rating)
-        return (rating >= 0 and rating <= 10)
-    except ValueError as e:
-        logging.debug("rating is not a float, %s", e)
-        return False
 
 
 
@@ -389,7 +293,7 @@ def _updateSong(song_url, new_rating, new_notes):
     song_already_exists, index_of_song = _doesSongExist(current_songs_list, song_url)
 
     if song_already_exists:
-        rating_is_legit = _validateRating(new_rating)
+        rating_is_legit = h_functions._validateRating(new_rating)
         if rating_is_legit:
             #update song entry    
             current_songs_list[index_of_song]["rating"] = new_rating
@@ -466,8 +370,7 @@ async def trigger(channel):
     DateNow = datetime.datetime.now()
     day_num = DateNow.weekday()
     if day_num == TRIGGER_DAY_NUM:
-        song = _getRandomSong()
-        await postSong(channel, song)
+        
         print("Triggered")
 
         #"""
@@ -512,7 +415,7 @@ async def trigger(channel):
 
                     print(f"\tstart: {slice_start}, end: {slice_end}, url: {yt_url}")
 
-                    is_valid_yt, _yt_title, _clean_url = _validateYoutubeURL(yt_url)
+                    is_valid_yt, _yt_title, _clean_url = h_functions._validateYoutubeURL(yt_url)
 
                     print(f"\tURL validation: {is_valid_yt}, title: {_yt_title}, clean: {_clean_url}")
 
@@ -543,7 +446,7 @@ async def trigger(channel):
         #go through each clump
         enactors = {}
         for author, msg_properties_list in msg_clumps.items():
-            print(f"author: {author}, msg_properties_list: \n{_str2DList(msg_properties_list)}")
+            print(f"author: {author}, msg_properties_list: \n{h_functions._str2DList(msg_properties_list)}")
             #msg_properties_list is a 2D list
             col_bitwise_or_results = []
             #bit-wise OR each column together
@@ -573,10 +476,11 @@ async def trigger(channel):
         print(f"enactors: {enactors}")
 
         #respone
-        if len(enactors.keys()) > 1:
+        num_enactors = len(enactors.keys())
+        if num_enactors > 1:
             msg = "Looks like Stryper central today, as my alogrithm is telling me *more than one* person is enacting Stryper Saturday!!!"
 
-        else:
+        elif num_enactors != 0:
             if DAVE_MODE:
                 User = list(enactors.keys())[0]
                 msg = f"{User.mention} grrrrrrrr"
@@ -586,6 +490,10 @@ async def trigger(channel):
 
             await channel.send(msg)
             print(msg)
+        else:
+            print("no enactors, so posting...")
+            song = _getRandomSong()
+            await postSong(channel, song)
 
         '''
         already_enacted = True in enacted_bit_map
@@ -601,7 +509,7 @@ async def trigger(channel):
         
         #"""
     else:
-        day_str = _getDictKey(DAYS_LEGEND, day_num) 
+        day_str = h_functions._getDictKey(DAYS_LEGEND, day_num) 
         msg = f"Wrong day to trigger as today is {day_str} not {TRIGGER_DAY_STR} \n:("
 
         await CHANNEL.send(msg)
@@ -642,8 +550,8 @@ async def add(Context, youtube_url, rating, *raw_notes):
 
         #validate user input
         # moved cleaning the URL into _validateYoutubeURL: clean_yt_url = _cleanYoutubeURL(youtube_url)
-        url_is_legit, yt_title, clean_yt_url = _validateYoutubeURL(youtube_url)
-        rating_is_legit = _validateRating(rating)
+        url_is_legit, yt_title, clean_yt_url = h_functions._validateYoutubeURL(youtube_url)
+        rating_is_legit = h_functions._validateRating(rating)
         
         #output stuff
         if url_is_legit and rating_is_legit:
@@ -674,7 +582,7 @@ async def update(Context, song_url, new_rating, *new_notes):
     is_member_privileged = await isMemberPrivileged(Context) 
 
     if is_member_privileged:
-        url_is_legit, _, clean_url = _validateYoutubeURL(song_url)
+        url_is_legit, _, clean_url = h_functions._validateYoutubeURL(song_url)
 
         if url_is_legit:
             is_successful, status_msg = _updateSong(clean_url, new_rating, new_notes)
@@ -806,11 +714,18 @@ async def on_ready():
 
     
 if __name__ == "__main__":
-    logging.basicConfig(filename="verbose output.log", encoding="utf-8", level=logging.DEBUG)
+    #make logging setup
+    log_folder = "logs"
+    if not os.path.isdir(log_folder):
+        os.mkdir(log_folder) 
+
+    log_file = log_folder + "/" + "verbose output " + datetime.datetime.now().strftime("%Y %b %d, %H;%M;%S") + ".log"
+    logging.basicConfig(filename=log_file, encoding="utf-8", level=logging.DEBUG)
+
     load_dotenv()  #enable os.getenv() to actually get 'environment variables' from .env file
 
     try:
         Bot.run(_getBotToken())
 
     except aiohttp.client_exceptions.ClientConnectorError as e:
-        print(f"...oops I caught a connection error running the bot: \n\t{e}")
+        logging.debug("...oops I caught a connection error running the bot: \n\t%s", e)

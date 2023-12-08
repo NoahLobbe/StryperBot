@@ -7,5 +7,5 @@
 #Don't include screenshots
 /private screenshots
 
-#Don't include the logging file, not really needed
-verbose output.log
+#Don't include logging files
+logs/*.log
