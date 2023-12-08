@@ -36,7 +36,7 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=11, minute=19, tzinfo=TIMEZONE) 
+TRIGGER_TIME = datetime.time(hour=13, minute=28, tzinfo=TIMEZONE) 
 TRIGGER_DAY_STR = "Friday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Deployment set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
@@ -142,6 +142,9 @@ def _getData():
     with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)
 
+def _writeData(new_data):
+    with open(DATA_FILE, "w") as write_file:
+        json.dump(new_data, write_file, indent=JSON_INDENTS)
 
 
 ### Templates helper functions
@@ -150,15 +153,17 @@ def _getTemplates():
     with open(DATA_FILE, "r") as read_file:
         return json.load(read_file)["templates"]
     
+
 def _writeTemplates(new_template):
     """Writes templates to database"""
     current_database = _getData()
     current_templates_list = current_database["templates"]
 
-    with open(DATA_FILE, "w") as write_file:
-        current_templates_list.append(new_template)
+    #with open(DATA_FILE, "w") as write_file:
+    current_templates_list.append(new_template)
+    _writeData(current_database)
 
-        json.dump(current_database, write_file, indent=JSON_INDENTS)
+        #json.dump(current_database, write_file, indent=JSON_INDENTS)
 
     
 def _randomTemplate():
@@ -205,6 +210,7 @@ def _doesTemplateExist(templates_list, template):
             return True, i
     return False, 0
 
+
 def _addTemplate(new_template):
     """Returns bool. True if successful, False otherwise"""
     
@@ -216,11 +222,13 @@ def _addTemplate(new_template):
         
         current_data_file["templates"].append(new_template)
 
-        with open(DATA_FILE, "w") as write_file:    
-            json.dump(current_data_file, write_file, indent=JSON_INDENTS)
+        _writeData(current_data_file)
+        #with open(DATA_FILE, "w") as write_file:    
+            #json.dump(current_data_file, write_file, indent=JSON_INDENTS)
         
         return True
     return False
+
 
 
 
@@ -276,15 +284,13 @@ def _addSong(title, url, rating, notes):
 
     song_already_exists, index_of_song = _doesSongExist(current_songs_list, new_song["url"])
     if not song_already_exists:
-        #add song to database
-        with open(DATA_FILE, "w") as write_file:
-            current_songs_list.append(new_song) #should also update current_data_file, right?
-
-            json.dump(current_data_file, write_file, indent=JSON_INDENTS)
+        current_songs_list.append(new_song) #add song to database
+        _writeData(current_data_file)
         return True
     else:
         return False
-    
+
+
 def _updateSong(song_url, new_rating, new_notes):
     """Updates song rating and notes in database if it exists. Returns bool of success/failure, messsage str"""    
     current_data_file = _getData()
@@ -299,8 +305,9 @@ def _updateSong(song_url, new_rating, new_notes):
             current_songs_list[index_of_song]["rating"] = new_rating
             current_songs_list[index_of_song]["notes"] = new_notes
 
-            with open(DATA_FILE, "w") as write_file:
-                json.dump(current_data_file, write_file, indent=JSON_INDENTS)
+            _writeData(current_data_file)
+            #with open(DATA_FILE, "w") as write_file:
+                #json.dump(current_data_file, write_file, indent=JSON_INDENTS)
             return True, "success"
         return False, "invalid rating"
     return False, "doesn't exist"
@@ -317,6 +324,33 @@ def _getRandomSong():
     songs_list = _getSongs()
     song_dict = rand.choice(songs_list)
     return song_dict
+
+def _strSong(song, suppress_link=True):
+    """Returns a nice string of the song"""
+    link_str = (suppress_link * '<') + song['url'] + (suppress_link * '>')
+    return f"{song['title']} ({link_str}) with rating {song['rating']}/10, {song['notes']}"
+
+
+### both song and template helper functions
+def _remove(key, raw_index):
+    """Removes the item of index from database[key], and returns a msg string"""
+    data = _getData()
+    num_items = len(data[key])
+    index = None
+    if raw_index.isdigit(): #doesn't accept negative indices
+        index = int(raw_index)
+
+        if index < num_items:
+            removed_item = data[key].pop(index)
+            _writeData(data)
+            if key == "songs":
+                str_item = _strSong(removed_item)
+            elif key == "templates":
+                str_item = removed_item
+
+            return f"'{str_item}' has been removed"
+        
+    return "index must be an integer from 0 to " + str(num_items-1)
 
 
 
@@ -351,17 +385,6 @@ async def addSong(Context, title, url, rating, raw_notes):
         await Context.send(error_msg)
         logging.debug(error_msg)
         return False
-
-
-async def messageIsStryperDay(Context, Message):
-    """Returns bool"""
-    #does message mention Stryper Day?
-    is_mentioned = "Stryper Saturday" in Message.content
-
-    does_contain_link = False
-    if does_contain_link:
-        link_is_stryper = False
-
 
 
 @discord.ext.tasks.loop(time=TRIGGER_TIME)
@@ -535,11 +558,10 @@ async def random(Context):
 
 
 @Bot.command()
-async def add(Context, youtube_url, rating, *raw_notes):
+async def add_s(Context, youtube_url, rating, *raw_notes):
     """Adds song to database. 'rating' needs to be a positive float (decimal) from 0 to 10,
     and 'raw_notes' is just in case some adds song notes without quotes, as discord.py
     seems to split arguements by spaces."""
-
     is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
 
@@ -580,7 +602,6 @@ async def add(Context, youtube_url, rating, *raw_notes):
 async def update(Context, song_url, new_rating, *new_notes):
     """Updates database provided the song_url is in the database"""
     is_member_privileged = await isMemberPrivileged(Context) 
-
     if is_member_privileged:
         url_is_legit, _, clean_url = h_functions._validateYoutubeURL(song_url)
 
@@ -591,7 +612,6 @@ async def update(Context, song_url, new_rating, *new_notes):
                 msg = status_msg
             else:
                 msg = f"ERROR: {status_msg}"  
-
         else:
             is_url_suppressed = ('<' in song_url) and ('>' in song_url)
             url = (is_url_suppressed * '<') + song_url + (is_url_suppressed * '>')
@@ -602,16 +622,24 @@ async def update(Context, song_url, new_rating, *new_notes):
 
 
 @Bot.command()
+async def remove_s(Context, raw_index):
+    """Remove a song from database"""
+    is_member_privileged = await isMemberPrivileged(Context) 
+    if is_member_privileged:
+        msg = _remove("songs", raw_index)
+        logging.info(msg)
+        await Context.send(msg)
+
+
+@Bot.command()
 async def songs(Context):
     """Prints all the songs from database nicely"""
     is_member_privileged = await isMemberPrivileged(Context) 
-
     if is_member_privileged:
         logging.info("printing song database...")
         msg = "Song database: \n"
 
         for i, song in enumerate(_getSongs()):
-            #make song dict into nice string
             raw_notes = song["notes"]
             if type(raw_notes) != str:
                 notes = " ".join(song["notes"])
@@ -626,7 +654,7 @@ async def songs(Context):
 
 ##template slash commands
 @Bot.command()
-async def add_template(Context, *raw_new_template_parts):
+async def add_t(Context, *raw_new_template_parts):
     """Add a template string to database"""
     is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
@@ -639,10 +667,7 @@ async def add_template(Context, *raw_new_template_parts):
             if is_successful:
                 msg = "Success"
             else:
-                msg = "Template already exists!"
-            await Context.send(msg)
-            logging.info(msg)
-            
+                msg = "Template already exists!"     
                 
         else:
             msg = f"ERROR adding new template: '{new_template}':"
@@ -654,24 +679,24 @@ async def add_template(Context, *raw_new_template_parts):
             if not code_bools[2]:
                 msg += "\n\tRequires url code '{url}'"
             
-            await Context.send(msg)
-            logging.info(msg)
-
+        await Context.send(msg)
+        logging.info(msg)
 
 
 @Bot.command()
-async def remove_template(Context):
+async def remove_t(Context, raw_index):
     """Remove a template string from database"""
     is_member_privileged = await isMemberPrivileged(Context) 
     if is_member_privileged:
-        pass #really not sure how to implement this
+        msg = _remove("templates", raw_index)
+        logging.info(msg)
+        await Context.send(msg)
 
 
 @Bot.command()
 async def templates(Context):
     """Prints all the templates from database nicely"""
     is_member_privileged = await isMemberPrivileged(Context) 
-
     if is_member_privileged:
         logging.info("printing template database...")
         msg = "Template database: \n"
@@ -681,6 +706,8 @@ async def templates(Context):
 
         await Context.send(msg)
         logging.info(msg)
+
+
 
 ###event commands
 @Bot.event
@@ -692,15 +719,13 @@ async def on_ready():
 
     _loadPrivilegedMembers()
 
-    already_existed = _doesDataFileExist()
+    data_already_exists = _doesDataFileExist()
 
-
-    #prints
     logging.info(f"{Bot.user} has connected to Discord, into '{CHANNEL}' channel!")
     await CHANNEL.send(TRIGGER_SETUP_MSG)
     logging.info(TRIGGER_SETUP_MSG)
 
-    if not already_existed:
+    if not data_already_exists:
         msg = "ERROR: database is empty, please fill..."
         await CHANNEL.send(msg)
         logging.debug(msg)
@@ -710,9 +735,7 @@ async def on_ready():
 
 
 
-    
 
-    
 if __name__ == "__main__":
     #make logging setup
     log_folder = "logs"

@@ -28,15 +28,9 @@
             "url": "https://www.youtube.com/watch?v=GvIS9029wzw",
             "rating": "5",
             "notes": ""
-        },
-        {
-            "title": "The Way, The Truth, The Life",
-            "url": "https://www.youtube.com/watch?v=71vxwUu_KL0",
-            "rating": "4",
-            "notes": []
         }
     ],
     "templates": [
-        "***Hello everybody and WELCOME to Stryper Saturday!!!*** \nToday is the amazing song *{title}*, with a rating of {rating}/10: {url}"
+        "***Hello everybody and WELCOME to Stryper Saturday!!!*** \nToday is the amazing song {title}, with a rating of {rating}/10: {url}"
     ]
 }

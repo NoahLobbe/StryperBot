@@ -49,16 +49,18 @@ Miscellaneous:
 - `.alive`: basically a command (available to **everyone**) to check if it is running, by replying with a message... :D
 
 Songs:
-- `.add`: adds a song to database. Has parameters `youtube_url` (`str`), `rating` (`float`, from 0 to 10), and `notes` (`str`) which can be contain in quotes or not (script catches it). 
-Additionally, suppression of links are also caught, e.g. `<url passed>`.
+- `.add_s`: adds a song to database. Has parameters `youtube_url` (`str`), `rating` (`float`, from 0 to 10), and `notes` (`str`) which can be contain in quotes or not (script catches it). 
+Additionally, suppression of links are also caught, e.g. `<url passed>`. Renamed from `.add`.
     - Example (Discord channel): `.add https://www.youtube.com/watch?v=sG0zAn0dL2I 10 Surely one of the best ever Stryper has done!`
-- `.update`: updates a song in the database. Has the same parameters as `.add`. Overwrites the `rating` and `notes` of existing song in database.
+- `.update`: updates a song in the database. Has the same parameters as `.add_s`. Overwrites the `rating` and `notes` of existing song in database.
 - `.songs`: posts a message of the songs database with their indices.
+- `remove_s`: Has parameter `index`, which is used to remove that song from database
 
 Templates
-- `.add_template`: adds the text after the command as a template for a Stryper Saturday post. **Must** contain template codes (see Data Structure section). Text can be inside quotes or not.
+- `.add_t`: adds the text after the command as a template for a Stryper Saturday post. **Must** contain template codes (see Data Structure section). Text can be inside quotes or not. Renamed from `.add_template`.
     - Example (Discord channel): `.add_template Greetings fans! \nToday's Stryper Saturday is the song {title}, with a rating of {rating}: {url}`
 - `.templates`: posts a message of the templates database with their indices.
+- `remove_t`: Has parameter `index`, which is used to remove that template from database
 
 
 
@@ -104,5 +106,5 @@ These files are probably not very easy to read, but were helpful in testing stuf
 - [ ] Catch legitimate non-youtube links when validating
 - [x] add a slash command to print song and template entries from database
 - [ ] add the Dave feature; bot responds to Stryper Saturday Enactor
-- [ ] Add a verbose output channel so that i don't always have to figure out a way to watch the program terminal output on Lance's server. Should ask him...
+- [ ] ~~Add a verbose output channel so that i don't always have to figure out a way to watch the program terminal output on Lance's server.~~ Should ask him...Going to use logging instead
 - [x] Add logging

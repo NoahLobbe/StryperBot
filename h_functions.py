@@ -113,7 +113,7 @@ def _validateYoutubeURL(url):
             return False, "", clean_url
     else:
         Logger.info("url (%s) doesn't contain '%s', automatic fail", url, key_str)
-        return False, "", ""
+        return False, "", url
 
 
 def _validateRating(rating_str):
@@ -127,3 +127,4 @@ def _validateRating(rating_str):
     except ValueError as e:
         Logger.debug("rating is not a float, %s", e)
         return False
+    
