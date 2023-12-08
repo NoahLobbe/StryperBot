@@ -80,7 +80,7 @@ As of 2nd December 2023, all functions that are not Bot functions, now start wit
 - `TIMEZONE`, `TRIGGER_TIME`, and `CHANNEL` are objects (from `datetime`) but I haven't figured out something better than `SCREAMING_SNAKE_CASE` as they are meant to be constant as well :D
 
 
-### Data Strucutre
+### Data Structure
 `data.json` is the database file. The highest level entries (or keys) are currently `songs` and `templates`.
 - `songs`: contains a `list` of `dict`'s which represent a `song`
     - `song`: is a `dict` consisting of the keys `title`, `url`, `rating`, and `notes`. `rating` is an `float` (from 0 to 10) while the rest are `str`'s. When adding a song to the database, `notes` is optional. `url` is the property used to determine if a song exists already in the database or not.
