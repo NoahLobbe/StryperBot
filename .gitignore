@@ -9,3 +9,6 @@
 
 #Don't include logging files
 logs/*.log
+
+#don't include pycache stuff
+__pycache__/

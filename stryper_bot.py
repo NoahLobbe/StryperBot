@@ -36,7 +36,7 @@ DATA_FILE = "data.json"
 DAYS_LEGEND = {"Monday":0, "Tuesday":1, "Wednesday":2, "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6} 
 
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=10.5))  #Adelaide is 10.5 hours ahead of UTC
-TRIGGER_TIME = datetime.time(hour=10, minute=38, tzinfo=TIMEZONE) 
+TRIGGER_TIME = datetime.time(hour=11, minute=19, tzinfo=TIMEZONE) 
 TRIGGER_DAY_STR = "Friday" #"Saturday"
 TRIGGER_DAY_NUM =   DAYS_LEGEND[TRIGGER_DAY_STR]
 TRIGGER_SETUP_MSG = f"Deployment set for {TRIGGER_DAY_STR} @ {TRIGGER_TIME.strftime('%H:%M')}" 
@@ -725,6 +725,7 @@ if __name__ == "__main__":
     load_dotenv()  #enable os.getenv() to actually get 'environment variables' from .env file
 
     try:
+        logging.info("running...")
         Bot.run(_getBotToken())
 
     except aiohttp.client_exceptions.ClientConnectorError as e:
