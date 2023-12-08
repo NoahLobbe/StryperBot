@@ -111,3 +111,4 @@ These files are probably not very easy to read, but were helpful in testing stuf
 - [ ] ~~Add a verbose output channel so that i don't always have to figure out a way to watch the program terminal output on Lance's server.~~ Should ask him...Going to use logging instead
 - [x] Add logging
 - [ ] CHeck to make sure Bot operates in the correct guild and channel
+- [ ] ??
